@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -44,6 +45,7 @@ from paths import (
     farm_ssurgo_summary_path,
     farm_weather_path,
     field_feature_path,
+    field_summary_path,
     shared_cdl_preferred_full_composition_path,
 )
 from pipeline import (
@@ -112,17 +114,54 @@ def _field_slug_lookup(inventory_path: Path = _FIELD_INVENTORY) -> dict[str, str
     }
 
 
+def _ndvi_card_titles(field_slug: str | None) -> dict[str, str]:
+    """Read honest card titles (crop-specific or all-vegetation) from the NDVI summary."""
+    defaults = {
+        "ndvi_corn.png": "Corn average NDVI",
+        "ndvi_corn_peak_95.png": "Corn 95th %ile peak NDVI",
+        "ndvi_soybean.png": "Soybean average NDVI",
+        "ndvi_soybean_peak_95.png": "Soybean 95th %ile peak NDVI",
+        "ndvi_current_season_cumulative.png": "Cumulative NDVI by crop and year",
+    }
+    if not field_slug:
+        return defaults
+    summary_path = field_summary_path(
+        _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_card_summary.json"
+    )
+    if not summary_path.exists():
+        return defaults
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return defaults
+    cards = payload.get("cards", {})
+    titles = dict(defaults)
+    for key, filename in {
+        "corn": "ndvi_corn.png",
+        "corn_peak_95": "ndvi_corn_peak_95.png",
+        "soybean": "ndvi_soybean.png",
+        "soybean_peak_95": "ndvi_soybean_peak_95.png",
+        "current_season_cumulative": "ndvi_current_season_cumulative.png",
+    }.items():
+        title = cards.get(key, {}).get("title")
+        if isinstance(title, str) and title:
+            titles[filename] = title
+    return titles
+
+
 def _ndvi_asset_links(field_slug: str | None) -> list[str]:
     if not field_slug:
         return []
+    titles = _ndvi_card_titles(field_slug)
     links = []
-    for filename, label in [
+    for filename, default_label in [
         ("ndvi_corn.png", "Corn average NDVI"),
         ("ndvi_corn_peak_95.png", "Corn 95th %ile peak NDVI"),
         ("ndvi_soybean.png", "Soybean average NDVI"),
         ("ndvi_soybean_peak_95.png", "Soybean 95th %ile peak NDVI"),
         ("ndvi_current_season_cumulative.png", "Cumulative NDVI by crop and year"),
     ]:
+        label = titles.get(filename, default_label)
         path = field_feature_path(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename)
         if path.exists():
             links.append(

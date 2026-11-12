@@ -354,6 +354,34 @@ def _load_ndvi_cards(field_slug: str | None) -> dict[str, str]:
     return cards
 
 
+def _ndvi_card_titles(field_slug: str | None) -> dict[str, str]:
+    """Read honest card titles (crop-specific or all-vegetation) from the NDVI summary."""
+    defaults = {
+        "corn": "Corn average NDVI",
+        "corn_peak_95": "Corn 95th %ile peak NDVI",
+        "soybean": "Soybean average NDVI",
+        "soybean_peak_95": "Soybean 95th %ile peak NDVI",
+        "current_season_cumulative": "Cumulative NDVI by crop and year",
+    }
+    field_root = _canonical_field_root(field_slug)
+    if field_root is None:
+        return defaults
+    summary_path = field_root / "derived" / "summaries" / "ndvi_card_summary.json"
+    if not summary_path.exists():
+        return defaults
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return defaults
+    cards = payload.get("cards", {})
+    titles = dict(defaults)
+    for key in defaults:
+        title = cards.get(key, {}).get("title")
+        if isinstance(title, str) and title:
+            titles[key] = title
+    return titles
+
+
 def _cdl_csv_path() -> Path:
     return _CDL_PRIMARY if _CDL_PRIMARY.exists() else _CDL_FALLBACK
 
@@ -434,6 +462,7 @@ def _field_card(
     poster_b64: str,
     soil_cards: list[tuple[str, str, str]],
     ndvi_cards: dict,
+    ndvi_titles: dict[str, str],
     strategy: dict[str, object],
     idx: int,
 ) -> str:
@@ -478,13 +507,14 @@ def _field_card(
         else "<p>No weather data</p>"
     )
     ndvi_blocks = []
-    for key, label in [
+    for key, default_label in [
         ("corn", "Corn average NDVI"),
         ("corn_peak_95", "Corn 95th %ile peak NDVI"),
         ("soybean", "Soybean average NDVI"),
         ("soybean_peak_95", "Soybean 95th %ile peak NDVI"),
         ("current_season_cumulative", "Cumulative NDVI by crop and year"),
     ]:
+        label = ndvi_titles.get(key, default_label)
         payload = ndvi_cards.get(key, "")
         if payload:
             ndvi_blocks.append(
@@ -759,13 +789,22 @@ def main() -> None:
         df_row_matches = field_df[field_df["field_id"] == fid]
         df_row = df_row_matches.iloc[0] if not df_row_matches.empty else pd.Series(frow)
         ndvi_cards = _load_ndvi_cards(field_slug_lookup.get(str(fid)))
+        ndvi_titles = _ndvi_card_titles(field_slug_lookup.get(str(fid)))
         strategy = generate_field_recommendations(
             df_row.to_dict() if hasattr(df_row, "to_dict") else dict(df_row),
             centroid_lat=_field_centroid_latitude(fields, idx_num),
         )
         field_cards.append(
             _field_card(
-                frow, df_row, fw, poster_b64, soil_cards, ndvi_cards, strategy, idx_num
+                frow,
+                df_row,
+                fw,
+                poster_b64,
+                soil_cards,
+                ndvi_cards,
+                ndvi_titles,
+                strategy,
+                idx_num,
             )
         )
 

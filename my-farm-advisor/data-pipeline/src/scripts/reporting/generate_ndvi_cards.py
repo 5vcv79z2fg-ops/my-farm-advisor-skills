@@ -227,7 +227,10 @@ def _collect_peak_scene_rows(
 
 
 def _compute_peak_percentile_array(
-    scene_rows: list[dict[str, Any]], percentile: float = 95.0
+    scene_rows: list[dict[str, Any]],
+    percentile: float = 95.0,
+    *,
+    mask_to_crop: bool = True,
 ) -> tuple[
     np.ndarray | None,
     float | None,
@@ -244,19 +247,19 @@ def _compute_peak_percentile_array(
 
     for row in scene_rows:
         ndvi_path = Path(row["ndvi_path"])
-        crop_code = int(row["crop_code"])
         ndvi_array = _read_resampled_like(
             ndvi_path, reference_path, resampling=Resampling.bilinear
         )
-        cdl_array = _read_resampled_like(
-            Path(row["cdl_raster"]), reference_path, resampling=Resampling.nearest
-        )
-        crop_mask = np.isfinite(cdl_array) & (
-            np.rint(cdl_array).astype("int32") == crop_code
-        )
-        masked = np.where(
-            crop_mask & np.isfinite(ndvi_array), ndvi_array, np.nan
-        ).astype("float32")
+        valid_mask = np.isfinite(ndvi_array)
+        if mask_to_crop:
+            crop_code = int(row["crop_code"])
+            cdl_array = _read_resampled_like(
+                Path(row["cdl_raster"]), reference_path, resampling=Resampling.nearest
+            )
+            valid_mask &= np.isfinite(cdl_array) & (
+                np.rint(cdl_array).astype("int32") == crop_code
+            )
+        masked = np.where(valid_mask, ndvi_array, np.nan).astype("float32")
         if np.isfinite(masked).any():
             masked_arrays.append(masked)
             used_rows.append(row)
@@ -475,7 +478,10 @@ def _collect_all_season_scene_rows(
 
 
 def _scene_metric_summary(
-    ndvi_path: Path, cdl_raster: Path, boundary_path: Path, crop_code: int
+    ndvi_path: Path,
+    cdl_raster: Path,
+    boundary_path: Path,
+    crop_code: int | None,
 ) -> dict[str, float] | None:
     boundary = gpd.read_file(boundary_path)
     with rasterio.open(ndvi_path) as src:
@@ -487,15 +493,14 @@ def _scene_metric_summary(
             invert=True,
             out_shape=(src.height, src.width),
         )
-    cdl_array = _read_resampled_like(
-        cdl_raster, ndvi_path, resampling=Resampling.nearest
-    )
-    valid_mask = (
-        field_mask
-        & np.isfinite(ndvi_array)
-        & np.isfinite(cdl_array)
-        & (np.rint(cdl_array).astype("int32") == crop_code)
-    )
+    valid_mask = field_mask & np.isfinite(ndvi_array)
+    if crop_code is not None:
+        cdl_array = _read_resampled_like(
+            cdl_raster, ndvi_path, resampling=Resampling.nearest
+        )
+        valid_mask &= np.isfinite(cdl_array) & (
+            np.rint(cdl_array).astype("int32") == crop_code
+        )
     values = ndvi_array[valid_mask]
     if values.size == 0:
         return None
@@ -523,15 +528,15 @@ def _render_current_cumulative_card(
     scene_rows: list[dict[str, Any]],
     join_df: pd.DataFrame,
     boundary_path: Path,
-) -> tuple[bool, str | None, dict[str, list[int]]]:
+) -> tuple[bool, str | None, dict[str, list[int]], str]:
     if not scene_rows:
         _placeholder_card(
             output_path,
-            "Cumulative NDVI by crop and year",
+            "Cumulative NDVI by year",
             "No usable cumulative NDVI scenes are available for this field.",
-            detail="The chart will populate after seasonal scenes are cached and crop-year joins are available.",
+            detail="The chart will populate after seasonal scenes are cached.",
         )
-        return False, "no cumulative scenes", {}
+        return False, "no cumulative scenes", {}, "none"
 
     frame = pd.DataFrame(scene_rows)
     crop_lookup = (
@@ -543,22 +548,29 @@ def _render_current_cumulative_card(
         else {}
     )
     frame["crop_name"] = [crop_lookup.get(int(year)) for year in frame["year"].tolist()]
-    frame = frame[frame["crop_name"].isin(["Corn", "Soybeans"])].copy()
-    if frame.empty:
-        _placeholder_card(
-            output_path,
-            "Cumulative NDVI by crop and year",
-            "No corn or soybean crop-year history is available for cumulative NDVI charts.",
-            detail="The chart will populate after crop-conditioned yearly NDVI joins are available.",
-        )
-        return False, "no corn/soybean crop-year joins", {}
+    crop_frame = frame[frame["crop_name"].isin(["Corn", "Soybeans"])].copy()
+    all_vegetation = crop_frame.empty
+    if all_vegetation:
+        # These fields have no corn/soybean years in the CDL window (for
+        # example wheat or pasture). Show every seasonal scene without a crop
+        # mask instead of leaving the card empty.
+        frame = frame.copy()
+        frame["crop_name"] = "All vegetation"
+        panel_crops = ["All vegetation"]
+        basis = "all_vegetation"
+    else:
+        frame = crop_frame
+        panel_crops = [
+            crop for crop in ("Corn", "Soybeans") if crop in set(frame["crop_name"])
+        ]
+        basis = "crop"
 
     crop_code_lookup = {"Corn": 1, "Soybeans": 5}
     metric_rows: list[dict[str, Any]] = []
     for _, row in frame.iterrows():
         crop_name = str(row["crop_name"])
-        crop_code = crop_code_lookup.get(crop_name)
-        if crop_code is None:
+        crop_code = None if all_vegetation else crop_code_lookup.get(crop_name)
+        if crop_code is None and not all_vegetation:
             continue
         metrics = _scene_metric_summary(
             Path(cast(Any, row["ndvi_path"])),
@@ -579,16 +591,16 @@ def _render_current_cumulative_card(
     if frame.empty:
         _placeholder_card(
             output_path,
-            "Cumulative NDVI by crop and year",
-            "No crop-masked NDVI pixels were available for cumulative chart metrics.",
-            detail="The chart will populate after crop-conditioned NDVI scenes and CDL rasters overlap.",
+            "Cumulative NDVI by year",
+            "No usable NDVI pixels were available for cumulative chart metrics.",
+            detail="The chart will populate after seasonal NDVI scenes overlap valid field pixels.",
         )
-        return False, "no crop-masked NDVI pixels", {}
+        return False, "no usable NDVI pixels", {}, basis
 
     frame = frame.sort_values(by=["crop_name", "year", "scene_date"]).copy()
     frame["day_of_year"] = frame["scene_date"].dt.dayofyear
     year_groups: list[pd.DataFrame] = []
-    crop_years: dict[str, list[int]] = {"Corn": [], "Soybeans": []}
+    crop_years: dict[str, list[int]] = {crop: [] for crop in panel_crops}
     for key, group in frame.groupby(["crop_name", "year"], sort=True):
         crop_name = str(cast(tuple[object, object], key)[0])
         year = int(cast(tuple[object, object], key)[1])
@@ -603,27 +615,38 @@ def _render_current_cumulative_card(
     fig.patch.set_facecolor("#fafaf9")
     gs = fig.add_gridspec(2, 2, height_ratios=[0.34, 1.0], hspace=0.06, wspace=0.18)
     title_ax = fig.add_subplot(gs[0, :])
-    crop_axes = {
-        "Corn": fig.add_subplot(gs[1, 0]),
-        "Soybeans": fig.add_subplot(gs[1, 1]),
-    }
+    if len(panel_crops) == 1:
+        crop_axes = {panel_crops[0]: fig.add_subplot(gs[1, :])}
+    else:
+        crop_axes = {
+            panel_crops[0]: fig.add_subplot(gs[1, 0]),
+            panel_crops[1]: fig.add_subplot(gs[1, 1]),
+        }
 
     title_ax.axis("off")
     title_ax.text(
         0.0,
         0.82,
-        "Cumulative NDVI by crop and year",
+        (
+            "Cumulative NDVI by crop and year"
+            if basis == "crop"
+            else "Cumulative NDVI by year (all vegetation)"
+        ),
         fontsize=16,
         fontweight="bold",
         color="#0f172a",
     )
+    subtitle = (
+        "Each subplot shows monthly best-available seasonal scenes grouped by dominant crop year, "
+        "with solid mean lines and shaded 5th-95th percentile envelopes for each observed year."
+        if basis == "crop"
+        else "No corn or soybean years were available for this field, so all seasonal scenes are shown "
+        "without a crop mask, using solid mean lines and shaded 5th-95th percentile envelopes."
+    )
     title_ax.text(
         0.0,
         0.10,
-        (
-            "Each subplot shows monthly best-available seasonal scenes grouped by dominant crop year, "
-            "with solid mean lines and shaded 5th-95th percentile envelopes for each observed year."
-        ),
+        subtitle,
         fontsize=10.5,
         color="#475569",
         va="bottom",
@@ -648,7 +671,8 @@ def _render_current_cumulative_card(
         ax.grid(True, alpha=0.25)
         ax.set_xlabel("Day of year", fontsize=10)
         ax.set_ylabel("Cumulative NDVI", fontsize=10)
-        ax.set_title(crop_name, fontsize=12.5, fontweight="bold", loc="left")
+        if basis == "crop":
+            ax.set_title(crop_name, fontsize=12.5, fontweight="bold", loc="left")
         ax.tick_params(axis="both", labelsize=9)
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(0.0, max(y_max * 1.05, 1.0))
@@ -656,7 +680,7 @@ def _render_current_cumulative_card(
             ax.text(
                 0.5,
                 0.5,
-                f"No {crop_name.lower()} seasonal curves available",
+                f"No {crop_name.lower().replace('soybeans', 'soybean')} seasonal curves available",
                 ha="center",
                 va="center",
                 transform=ax.transAxes,
@@ -694,6 +718,7 @@ def _render_current_cumulative_card(
         True,
         None,
         {key: sorted(set(value)) for key, value in crop_years.items() if value},
+        basis,
     )
 
 
@@ -839,14 +864,21 @@ def main() -> None:
 
         for card_key, spec in _CROP_CARD_SPECS.items():
             crop_name = str(spec["crop_name"])
+            crop_lower = crop_name.lower().replace("soybeans", "soybean")
             rollup_path = field_feature_path(
                 _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, str(spec["rollup"])
+            )
+            fallback_path = field_feature_path(
+                _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_all_years_rollup.tif"
             )
             crop_years = _crop_years(join_df, crop_name)
             array = None
             mean_ndvi = None
             value_range = None
             reason = None
+            basis = "crop"
+            display_title = str(spec["label"])
+            source_path = rollup_path
             if rollup_path.exists() and boundary_path.exists():
                 try:
                     array, mean_ndvi, value_range = _field_array_stats(
@@ -855,14 +887,34 @@ def main() -> None:
                 except Exception as exc:
                     reason = f"failed to read rollup raster: {exc}"
             elif crop_years:
-                reason = f"missing rollup raster for {crop_name.lower()} years"
+                reason = f"missing rollup raster for {crop_lower} years"
+            elif fallback_path.exists() and boundary_path.exists():
+                try:
+                    array, mean_ndvi, value_range = _field_array_stats(
+                        fallback_path, boundary_path
+                    )
+                    basis = "all_vegetation"
+                    display_title = "Average NDVI — all vegetation"
+                    source_path = fallback_path
+                    reason = (
+                        f"no {crop_lower} years in the crop window; "
+                        "using the all-year NDVI fallback"
+                    )
+                except Exception as exc:
+                    reason = f"failed to read all-year NDVI fallback: {exc}"
             else:
                 reason = (
-                    f"no {crop_name.lower()} years in the available crop history window"
+                    f"no {crop_lower} years in the available crop history window "
+                    "and no all-year NDVI fallback"
                 )
 
             subtitle_lines = []
-            if crop_years:
+            if basis == "all_vegetation":
+                subtitle_lines.append(
+                    f"No {crop_lower} years in the available crop window"
+                )
+                subtitle_lines.append("Showing all-vegetation NDVI for every NDVI year")
+            elif crop_years:
                 subtitle_lines.append(
                     f"Years included: {', '.join(str(year) for year in crop_years)} ({len(crop_years)} total)"
                 )
@@ -871,30 +923,31 @@ def main() -> None:
                     "Years included: none in the current 5-year crop window"
                 )
             subtitle_lines.append(
-                f"Source raster: {rollup_path.name if rollup_path.exists() else 'not available'}"
+                f"Source raster: {source_path.name if source_path.exists() else 'not available'}"
             )
 
             rendered = _render_raster_card(
                 outputs[card_key],
-                str(spec["label"]),
+                display_title,
                 subtitle_lines,
                 array,
                 mean_ndvi,
                 value_range,
                 fallback_message=(
-                    f"This field does not yet have a usable {crop_name.lower()} NDVI rollup in the "
+                    f"This field does not yet have a usable {crop_lower} NDVI rollup in the "
                     "canonical cache."
                 ),
             )
             summary_payload["cards"][card_key] = {
                 "status": "available" if rendered else "unavailable",
-                "title": spec["label"],
+                "title": display_title,
+                "basis": basis,
                 "crop_name": crop_name,
                 "years": crop_years,
                 "year_count": len(crop_years),
                 "output_png": str(outputs[card_key].relative_to(_REPO)),
-                "rollup_tif": str(rollup_path.relative_to(_REPO))
-                if rollup_path.exists()
+                "rollup_tif": str(source_path.relative_to(_REPO))
+                if source_path.exists()
                 else None,
                 "reason": reason,
                 "mean_ndvi": mean_ndvi,
@@ -907,13 +960,32 @@ def main() -> None:
             reference_path = None
             used_rows: list[dict[str, Any]] = []
             reason = None
+            basis = "crop"
+            display_title = str(spec["label"])
+            crop_lower = str(spec["crop_name"]).lower().replace("soybeans", "soybean")
             scene_rows = peak_scene_rows_by_key[peak_key]
             if scene_rows:
                 peak_array, peak_mean, peak_range, reference_path, used_rows = (
                     _compute_peak_percentile_array(scene_rows, percentile=95.0)
                 )
                 if peak_array is None:
-                    reason = "peak-window scenes were available but no matching crop pixels overlapped valid NDVI"
+                    # No pixels matched this crop in the peak window (for
+                    # example a wheat or pasture field). Retry without the crop
+                    # mask so the card still shows real NDVI data.
+                    peak_array, peak_mean, peak_range, reference_path, used_rows = (
+                        _compute_peak_percentile_array(
+                            scene_rows, percentile=95.0, mask_to_crop=False
+                        )
+                    )
+                    if peak_array is not None:
+                        basis = "all_vegetation"
+                        display_title = "95th %ile peak NDVI — all vegetation"
+                        reason = (
+                            f"no {crop_lower} pixels in the peak window; "
+                            "using the all-vegetation peak fallback"
+                        )
+                    else:
+                        reason = "peak-window scenes were available but no valid NDVI pixels overlapped the field"
             else:
                 reason = "no peak-window scenes were available for this crop"
 
@@ -929,25 +1001,30 @@ def main() -> None:
                 (
                     f"Years included: {', '.join(str(int(row['year'])) for row in used_rows) if used_rows else 'none'}"
                 ),
-                "Per-pixel 95th percentile across peak-window NDVI scenes clipped to matching CDL crop pixels",
+                (
+                    "Per-pixel 95th percentile across peak-window NDVI scenes clipped to matching CDL crop pixels"
+                    if basis == "crop"
+                    else "No matching crop pixels were found, so the 95th percentile is computed across all field pixels"
+                ),
             ]
 
             rendered = _render_raster_card(
                 outputs[peak_key],
-                str(spec["label"]),
+                display_title,
                 subtitle_lines,
                 peak_array,
                 peak_mean,
                 peak_range,
                 fallback_message=(
-                    f"This field does not yet have usable peak-window NDVI scenes for {str(spec['crop_name']).lower()} pixels."
+                    f"This field does not yet have usable peak-window NDVI scenes for {crop_lower} pixels."
                 ),
                 vmin=0.3,
                 vmax=0.9,
             )
             summary_payload["cards"][peak_key] = {
                 "status": "available" if rendered else "unavailable",
-                "title": spec["label"],
+                "title": display_title,
+                "basis": basis,
                 "crop_name": spec["crop_name"],
                 "doy_window": list(cast(tuple[int, int], spec["doy_window"])),
                 "scene_count": len(used_rows),
@@ -961,7 +1038,12 @@ def main() -> None:
                 "mean_ndvi": peak_mean,
             }
 
-        rendered_current, current_reason, crop_years = _render_current_cumulative_card(
+        (
+            rendered_current,
+            current_reason,
+            cumulative_crop_years,
+            cumulative_basis,
+        ) = _render_current_cumulative_card(
             outputs["current_season_cumulative"],
             selected_scene_rows,
             join_df,
@@ -969,11 +1051,16 @@ def main() -> None:
         )
         summary_payload["cards"]["current_season_cumulative"] = {
             "status": "available" if rendered_current else "unavailable",
-            "title": "Cumulative NDVI by crop and year",
+            "title": (
+                "Cumulative NDVI by crop and year"
+                if cumulative_basis == "crop"
+                else "Cumulative NDVI by year (all vegetation)"
+            ),
+            "basis": cumulative_basis,
             "scene_count": len(selected_scene_rows),
             "crop_years": {
                 crop_name.lower().replace("beans", "bean"): years
-                for crop_name, years in crop_years.items()
+                for crop_name, years in cumulative_crop_years.items()
             },
             "sources": sorted({str(row["sensor"]) for row in selected_scene_rows}),
             "output_png": str(outputs["current_season_cumulative"].relative_to(_REPO)),
