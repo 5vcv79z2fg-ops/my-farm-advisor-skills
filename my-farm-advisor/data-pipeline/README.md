@@ -173,6 +173,29 @@ python scripts/run_maturity_by_fips.py \
 
 Use `--weather-backend api` only when explicitly debugging the legacy NASA POWER point API path for county weather.
 
+## Grower web map
+
+`scripts/reporting/generate_grower_web_map.py` builds one lightweight interactive HTML map per grower. It reads every farm boundary GeoJSON under the grower, embeds the polygons inline, and renders them with Leaflet on an online Esri World Imagery basemap. No imagery, rasters, or base64 payloads are embedded, so files stay small (tens of KiB for a few fields). Click a field to see grower, farm, field name, area, crop, county/state, and field ID; the sidebar list zooms to individual fields.
+
+Output:
+
+```text
+${DATA_PIPELINE_DATA_ROOT}/data-pipeline/growers/<grower>/derived/reports/<grower>_grower_fields_map.html
+```
+
+Run it from the runtime source copy for one grower, several growers, or every grower:
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/reporting/generate_grower_web_map.py \
+  --grower-slug il-dekalb-grower \
+  --grower-slug ia-story-grower
+```
+
+Add `--dry-run` to print resolved grower/field counts and output paths without writing files, or `--output-dir <path>` to override the destination. Field labels use `<farm display name> — Field <n>` unless `field.json` supplies a `label` or a meaningful `display_name`. Ordinals keep labels stable across reruns even when acreage is recomputed.
+
 ## Default DEM terrain package
 
 Normal farm pipeline initialization and add-field runs that invoke `scripts/run_farm_pipeline.py` include real DEM terrain by default. The pipeline calls `scripts/ingest/download_dem_terrain.py` immediately after field boundary download, passes live real-source permission through `--allow-live-downloads`, and writes elevation, slope, aspect, hillshade, curvature, wetness, depression, relative elevation, and erosion-proxy products under the runtime field tree. Generated farm and field reports do not integrate terrain metrics in this change.

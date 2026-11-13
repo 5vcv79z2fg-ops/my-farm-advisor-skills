@@ -80,6 +80,19 @@ cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
   scripts/run_farm_pipeline.py --structure-test
 ```
 
+Generate grower-level interactive field maps for every grower in the runtime:
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/reporting/generate_grower_web_map.py \
+  --grower-slug il-dekalb-grower \
+  --grower-slug ia-story-grower
+```
+
+Writes `growers/<grower>/derived/reports/<grower>_grower_fields_map.html`. Use `--dry-run` to inspect resolved inputs and outputs, and `--output-dir` to override the report root. The map embeds only field polygons and metadata; basemap tiles load from Esri at view time.
+
 Run the farm pipeline with default field-location NASA POWER weather and default real DEM terrain. Farm weather samples NASA POWER S3 Zarr at each field centroid, writes the existing farm weather CSV schema, and stages per-field `weather/daily_weather.csv` files. The pipeline invokes `scripts/ingest/download_dem_terrain.py` immediately after field boundary download with live real-source permission, before soil, weather, CDL, satellite, and reporting steps:
 
 ```bash
