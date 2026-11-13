@@ -96,6 +96,8 @@ _PEAK_CARD_SPECS = {
         "output_tif": "ndvi_soybean_peak_95.tif",
     },
 }
+_PEAK_CROP_MIN_PIXELS = 25
+_PEAK_CROP_MIN_FRACTION = 0.05
 
 
 def _field_slug_lookup(inventory_path: Path = _FIELD_INVENTORY) -> dict[str, str]:
@@ -226,11 +228,51 @@ def _collect_peak_scene_rows(
     return sorted(rows, key=lambda row: (row["scene_date"], row["sensor"]))
 
 
+def _select_peak_reference(scene_rows: list[dict[str, Any]]) -> Path | None:
+    """Pick the highest-resolution scene as the stack reference grid.
+
+    Scene rows are date-sorted, and same-day Landsat rows sort before Sentinel,
+    so using the first row silently downsamples the whole peak card to Landsat
+    resolution. Choose the smallest pixel area instead, preferring Sentinel.
+    """
+    best_path: Path | None = None
+    best_key: tuple[float, int] | None = None
+    for row in scene_rows:
+        ndvi_path = Path(row["ndvi_path"])
+        with rasterio.open(ndvi_path) as src:
+            pixel_area = abs(
+                src.transform.a * src.transform.e - src.transform.b * src.transform.d
+            )
+        sensor_rank = 0 if str(row.get("sensor", "")).lower() == "sentinel" else 1
+        key = (pixel_area, sensor_rank)
+        if best_key is None or key < best_key:
+            best_key = key
+            best_path = ndvi_path
+    return best_path
+
+
+def _field_mask(reference_path: Path, boundary_path: Path) -> np.ndarray:
+    boundary = gpd.read_file(boundary_path)
+    with rasterio.open(reference_path) as src:
+        boundary_proj = boundary.to_crs(src.crs)
+        return geometry_mask(
+            boundary_proj.geometry,
+            transform=src.transform,
+            invert=True,
+            out_shape=(src.height, src.width),
+        )
+
+
+def _field_pixel_count(reference_path: Path, boundary_path: Path) -> int:
+    return int(_field_mask(reference_path, boundary_path).sum())
+
+
 def _compute_peak_percentile_array(
     scene_rows: list[dict[str, Any]],
     percentile: float = 95.0,
     *,
     mask_to_crop: bool = True,
+    boundary_path: Path | None = None,
 ) -> tuple[
     np.ndarray | None,
     float | None,
@@ -241,7 +283,14 @@ def _compute_peak_percentile_array(
     if not scene_rows:
         return None, None, None, None, []
 
-    reference_path = Path(scene_rows[0]["ndvi_path"])
+    reference_path = _select_peak_reference(scene_rows)
+    if reference_path is None:
+        return None, None, None, None, []
+    field_mask = (
+        _field_mask(reference_path, boundary_path)
+        if boundary_path is not None and boundary_path.exists()
+        else None
+    )
     masked_arrays: list[np.ndarray] = []
     used_rows: list[dict[str, Any]] = []
 
@@ -251,6 +300,8 @@ def _compute_peak_percentile_array(
             ndvi_path, reference_path, resampling=Resampling.bilinear
         )
         valid_mask = np.isfinite(ndvi_array)
+        if field_mask is not None:
+            valid_mask &= field_mask
         if mask_to_crop:
             crop_code = int(row["crop_code"])
             cdl_array = _read_resampled_like(
@@ -963,27 +1014,54 @@ def main() -> None:
             basis = "crop"
             display_title = str(spec["label"])
             crop_lower = str(spec["crop_name"]).lower().replace("soybeans", "soybean")
+            crop_pixels = 0
+            field_pixels = 0
             scene_rows = peak_scene_rows_by_key[peak_key]
             if scene_rows:
                 peak_array, peak_mean, peak_range, reference_path, used_rows = (
-                    _compute_peak_percentile_array(scene_rows, percentile=95.0)
+                    _compute_peak_percentile_array(
+                        scene_rows, percentile=95.0, boundary_path=boundary_path
+                    )
                 )
+                if reference_path is not None and boundary_path.exists():
+                    field_pixels = _field_pixel_count(reference_path, boundary_path)
+                if peak_array is not None and reference_path is not None:
+                    crop_pixels = int(np.isfinite(peak_array).sum())
+                    coverage = crop_pixels / field_pixels if field_pixels else 0.0
+                    if (
+                        crop_pixels < _PEAK_CROP_MIN_PIXELS
+                        or coverage < _PEAK_CROP_MIN_FRACTION
+                    ):
+                        # A handful of crop pixels is not a usable crop card (for
+                        # example a pasture field with one sliver soybean year).
+                        # Retry without the crop mask instead of rendering a
+                        # mostly-empty map.
+                        peak_array = None
+                        reason = (
+                            f"only {crop_pixels} matching {crop_lower} pixels "
+                            f"({coverage:.1%} of field) in the peak window; "
+                            "using the all-vegetation peak fallback"
+                        )
                 if peak_array is None:
                     # No pixels matched this crop in the peak window (for
                     # example a wheat or pasture field). Retry without the crop
                     # mask so the card still shows real NDVI data.
                     peak_array, peak_mean, peak_range, reference_path, used_rows = (
                         _compute_peak_percentile_array(
-                            scene_rows, percentile=95.0, mask_to_crop=False
+                            scene_rows,
+                            percentile=95.0,
+                            mask_to_crop=False,
+                            boundary_path=boundary_path,
                         )
                     )
                     if peak_array is not None:
                         basis = "all_vegetation"
                         display_title = "95th %ile peak NDVI — all vegetation"
-                        reason = (
-                            f"no {crop_lower} pixels in the peak window; "
-                            "using the all-vegetation peak fallback"
-                        )
+                        if reason is None:
+                            reason = (
+                                f"no {crop_lower} pixels in the peak window; "
+                                "using the all-vegetation peak fallback"
+                            )
                     else:
                         reason = "peak-window scenes were available but no valid NDVI pixels overlapped the field"
             else:
@@ -999,12 +1077,20 @@ def main() -> None:
                     f"Scenes used: {len(used_rows)}"
                 ),
                 (
-                    f"Years included: {', '.join(str(int(row['year'])) for row in used_rows) if used_rows else 'none'}"
+                    "Years included: "
+                    + (
+                        ", ".join(
+                            str(year)
+                            for year in sorted({int(row["year"]) for row in used_rows})
+                        )
+                        if used_rows
+                        else "none"
+                    )
                 ),
                 (
                     "Per-pixel 95th percentile across peak-window NDVI scenes clipped to matching CDL crop pixels"
                     if basis == "crop"
-                    else "No matching crop pixels were found, so the 95th percentile is computed across all field pixels"
+                    else "No usable crop pixels were found, so the 95th percentile is computed across all field pixels"
                 ),
             ]
 
@@ -1030,6 +1116,11 @@ def main() -> None:
                 "scene_count": len(used_rows),
                 "years": sorted({int(row["year"]) for row in used_rows}),
                 "sources": sorted({str(row["sensor"]) for row in used_rows}),
+                "crop_pixel_count": crop_pixels,
+                "field_pixel_count": field_pixels,
+                "crop_coverage": round(crop_pixels / field_pixels, 4)
+                if field_pixels
+                else None,
                 "output_png": str(outputs[peak_key].relative_to(_REPO)),
                 "output_tif": str(tif_output.relative_to(_REPO))
                 if tif_output.exists()
