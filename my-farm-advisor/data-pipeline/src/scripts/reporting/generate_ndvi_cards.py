@@ -98,6 +98,11 @@ _PEAK_CARD_SPECS = {
 }
 _PEAK_CROP_MIN_PIXELS = 25
 _PEAK_CROP_MIN_FRACTION = 0.05
+# All-vegetation fallback cards use their own filenames so a PNG never claims
+# to show crop-specific NDVI when it actually shows every field pixel. Both
+# crop slots share one canonical all-vegetation card, so reports can dedupe it.
+_ALL_VEG_AVG_PNG = "ndvi_all_vegetation.png"
+_ALL_VEG_PEAK_PNG = "ndvi_all_vegetation_peak_95.png"
 
 
 def _field_slug_lookup(inventory_path: Path = _FIELD_INVENTORY) -> dict[str, str]:
@@ -393,6 +398,24 @@ def _placeholder_card(
         output_path, dpi=170, bbox_inches="tight", facecolor=fig.get_facecolor()
     )
     plt.close(fig)
+
+
+def _crop_to_valid(array: np.ndarray, pad: int = 2) -> np.ndarray:
+    """Crop an array to the bounding box of valid pixels plus padding.
+
+    Sparse QA cards can contain only a handful of crop pixels in a full-field
+    grid. Rendering the whole grid makes them invisible, so crop the view.
+    """
+    valid = np.isfinite(array)
+    if not valid.any():
+        return array
+    rows = np.where(valid.any(axis=1))[0]
+    cols = np.where(valid.any(axis=0))[0]
+    row_start = max(int(rows[0]) - pad, 0)
+    row_stop = min(int(rows[-1]) + pad + 1, array.shape[0])
+    col_start = max(int(cols[0]) - pad, 0)
+    col_stop = min(int(cols[-1]) + pad + 1, array.shape[1])
+    return array[row_start:row_stop, col_start:col_stop]
 
 
 def _render_raster_card(
@@ -810,11 +833,29 @@ def _card_outputs(field_slug: str) -> dict[str, Path]:
         "soybean": field_feature_path(
             _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_soybean.png"
         ),
+        "all_vegetation": field_feature_path(
+            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, _ALL_VEG_AVG_PNG
+        ),
         "corn_peak_95": field_feature_path(
             _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_corn_peak_95.png"
         ),
         "soybean_peak_95": field_feature_path(
             _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_soybean_peak_95.png"
+        ),
+        "all_vegetation_peak_95": field_feature_path(
+            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, _ALL_VEG_PEAK_PNG
+        ),
+        "corn_peak_95_crop_only": field_feature_path(
+            _DEFAULT_GROWER,
+            _DEFAULT_FARM,
+            field_slug,
+            "ndvi_corn_peak_95_crop_only.png",
+        ),
+        "soybean_peak_95_crop_only": field_feature_path(
+            _DEFAULT_GROWER,
+            _DEFAULT_FARM,
+            field_slug,
+            "ndvi_soybean_peak_95_crop_only.png",
         ),
         "corn_peak_95_tif": field_feature_path(
             _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_corn_peak_95.tif"
@@ -895,9 +936,10 @@ def main() -> None:
         manifest = build_step_manifest(
             step_name=f"ndvi_card_render_{field_id}",
             input_paths=input_paths,
-            output_paths=[
-                path for key, path in outputs.items() if not key.endswith("_tif")
-            ],
+            # Keep the staleness check on stable outputs only. Card filenames
+            # are basis-dependent and stale crop-named PNGs get deleted, so
+            # tracking every possible path would force a rerun on every pass.
+            output_paths=[outputs["summary"], outputs["current_season_cumulative"]],
             code_paths=[_SCRIPT],
             config=config,
         )
@@ -913,6 +955,7 @@ def main() -> None:
             "cards": {},
         }
 
+        avg_all_veg_used = False
         for card_key, spec in _CROP_CARD_SPECS.items():
             crop_name = str(spec["crop_name"])
             crop_lower = crop_name.lower().replace("soybeans", "soybean")
@@ -977,8 +1020,18 @@ def main() -> None:
                 f"Source raster: {source_path.name if source_path.exists() else 'not available'}"
             )
 
+            png_output = (
+                outputs["all_vegetation"]
+                if basis == "all_vegetation"
+                else outputs[card_key]
+            )
+            if basis == "all_vegetation":
+                avg_all_veg_used = True
+                # Remove the misleading crop-named PNG left by older runs.
+                outputs[card_key].unlink(missing_ok=True)
+
             rendered = _render_raster_card(
-                outputs[card_key],
+                png_output,
                 display_title,
                 subtitle_lines,
                 array,
@@ -996,13 +1049,35 @@ def main() -> None:
                 "crop_name": crop_name,
                 "years": crop_years,
                 "year_count": len(crop_years),
-                "output_png": str(outputs[card_key].relative_to(_REPO)),
+                "output_png": str(png_output.relative_to(_REPO)),
                 "rollup_tif": str(source_path.relative_to(_REPO))
                 if source_path.exists()
                 else None,
                 "reason": reason,
                 "mean_ndvi": mean_ndvi,
             }
+
+        if not avg_all_veg_used:
+            outputs["all_vegetation"].unlink(missing_ok=True)
+
+        # Both peak slots fall back to one shared all-vegetation stack so the
+        # report can show a single honest card instead of two duplicates. The
+        # union of the crop peak windows is the widest sensible all-veg window.
+        peak_union_rows: list[dict[str, Any]] = []
+        seen_peak_paths: set[str] = set()
+        for rows in peak_scene_rows_by_key.values():
+            for row in rows:
+                row_key = str(row["ndvi_path"])
+                if row_key not in seen_peak_paths:
+                    seen_peak_paths.add(row_key)
+                    peak_union_rows.append(row)
+        peak_union_rows.sort(key=lambda row: (row["scene_date"], row["sensor"]))
+        peak_union_window = (
+            min(int(spec["doy_window"][0]) for spec in _PEAK_CARD_SPECS.values()),
+            max(int(spec["doy_window"][1]) for spec in _PEAK_CARD_SPECS.values()),
+        )
+        peak_all_veg_cache: dict[str, Any] | None = None
+        peak_all_veg_used = False
 
         for peak_key, spec in _PEAK_CARD_SPECS.items():
             peak_array = None
@@ -1016,6 +1091,11 @@ def main() -> None:
             crop_lower = str(spec["crop_name"]).lower().replace("soybeans", "soybean")
             crop_pixels = 0
             field_pixels = 0
+            coverage = 0.0
+            crop_only_array = None
+            crop_only_mean = None
+            crop_only_range = None
+            crop_only_rows: list[dict[str, Any]] = []
             scene_rows = peak_scene_rows_by_key[peak_key]
             if scene_rows:
                 peak_array, peak_mean, peak_range, reference_path, used_rows = (
@@ -1034,8 +1114,12 @@ def main() -> None:
                     ):
                         # A handful of crop pixels is not a usable crop card (for
                         # example a pasture field with one sliver soybean year).
-                        # Retry without the crop mask instead of rendering a
-                        # mostly-empty map.
+                        # Keep the crop-masked array as a QA asset, then fall back
+                        # to an all-vegetation card for the main report.
+                        crop_only_array = peak_array
+                        crop_only_mean = peak_mean
+                        crop_only_range = peak_range
+                        crop_only_rows = list(used_rows)
                         peak_array = None
                         reason = (
                             f"only {crop_pixels} matching {crop_lower} pixels "
@@ -1043,17 +1127,33 @@ def main() -> None:
                             "using the all-vegetation peak fallback"
                         )
                 if peak_array is None:
-                    # No pixels matched this crop in the peak window (for
-                    # example a wheat or pasture field). Retry without the crop
-                    # mask so the card still shows real NDVI data.
-                    peak_array, peak_mean, peak_range, reference_path, used_rows = (
-                        _compute_peak_percentile_array(
-                            scene_rows,
+                    # No usable crop pixels in the peak window (for example a
+                    # wheat or pasture field). Show one real all-vegetation map.
+                    if peak_all_veg_cache is None:
+                        (
+                            all_veg_array,
+                            all_veg_mean,
+                            all_veg_range,
+                            all_veg_ref,
+                            all_veg_rows,
+                        ) = _compute_peak_percentile_array(
+                            peak_union_rows,
                             percentile=95.0,
                             mask_to_crop=False,
                             boundary_path=boundary_path,
                         )
-                    )
+                        peak_all_veg_cache = {
+                            "array": all_veg_array,
+                            "mean": all_veg_mean,
+                            "range": all_veg_range,
+                            "reference": all_veg_ref,
+                            "rows": all_veg_rows,
+                        }
+                    peak_array = peak_all_veg_cache["array"]
+                    peak_mean = peak_all_veg_cache["mean"]
+                    peak_range = peak_all_veg_cache["range"]
+                    reference_path = peak_all_veg_cache["reference"]
+                    used_rows = list(peak_all_veg_cache["rows"])
                     if peak_array is not None:
                         basis = "all_vegetation"
                         display_title = "95th %ile peak NDVI — all vegetation"
@@ -1071,9 +1171,62 @@ def main() -> None:
             if peak_array is not None and reference_path is not None:
                 write_single_band_raster(tif_output, peak_array, reference_path)
 
+            if basis == "all_vegetation":
+                peak_all_veg_used = True
+                png_output = outputs["all_vegetation_peak_95"]
+                # Remove the misleading crop-named PNG from older runs.
+                outputs[peak_key].unlink(missing_ok=True)
+            else:
+                png_output = outputs[peak_key]
+
+            qa_output = outputs[f"{peak_key}_crop_only"]
+            crop_only_output_png = None
+            if (
+                basis == "all_vegetation"
+                and crop_only_array is not None
+                and crop_only_mean is not None
+                and crop_only_range is not None
+                and crop_pixels > 0
+            ):
+                qa_rendered = _render_raster_card(
+                    qa_output,
+                    f"{spec['label']} — sparse crop pixels (QA)",
+                    [
+                        (
+                            f"Only {crop_pixels} matching {crop_lower} pixels "
+                            f"({coverage:.1%} of field) in the crop-masked peak window"
+                        ),
+                        (
+                            "Years included: "
+                            + ", ".join(
+                                str(year)
+                                for year in sorted(
+                                    {int(row["year"]) for row in crop_only_rows}
+                                )
+                            )
+                        ),
+                        "View cropped to crop-pixel extent; QA asset only, excluded from farm reports",
+                    ],
+                    _crop_to_valid(crop_only_array),
+                    crop_only_mean,
+                    crop_only_range,
+                    fallback_message=(
+                        f"No crop-masked peak NDVI pixels were available for {crop_lower}."
+                    ),
+                    vmin=0.3,
+                    vmax=0.9,
+                )
+                if qa_rendered:
+                    crop_only_output_png = str(qa_output.relative_to(_REPO))
+            else:
+                qa_output.unlink(missing_ok=True)
+
+            window = (
+                peak_union_window if basis == "all_vegetation" else spec["doy_window"]
+            )
             subtitle_lines = [
                 (
-                    f"Peak window DOY {spec['doy_window'][0]}-{spec['doy_window'][1]} | "
+                    f"Peak window DOY {window[0]}-{window[1]} | "
                     f"Scenes used: {len(used_rows)}"
                 ),
                 (
@@ -1095,7 +1248,7 @@ def main() -> None:
             ]
 
             rendered = _render_raster_card(
-                outputs[peak_key],
+                png_output,
                 display_title,
                 subtitle_lines,
                 peak_array,
@@ -1112,7 +1265,7 @@ def main() -> None:
                 "title": display_title,
                 "basis": basis,
                 "crop_name": spec["crop_name"],
-                "doy_window": list(cast(tuple[int, int], spec["doy_window"])),
+                "doy_window": list(cast(tuple[int, int], window)),
                 "scene_count": len(used_rows),
                 "years": sorted({int(row["year"]) for row in used_rows}),
                 "sources": sorted({str(row["sensor"]) for row in used_rows}),
@@ -1121,13 +1274,17 @@ def main() -> None:
                 "crop_coverage": round(crop_pixels / field_pixels, 4)
                 if field_pixels
                 else None,
-                "output_png": str(outputs[peak_key].relative_to(_REPO)),
+                "output_png": str(png_output.relative_to(_REPO)),
+                "crop_only_output_png": crop_only_output_png,
                 "output_tif": str(tif_output.relative_to(_REPO))
                 if tif_output.exists()
                 else None,
                 "reason": reason,
                 "mean_ndvi": peak_mean,
             }
+
+        if not peak_all_veg_used:
+            outputs["all_vegetation_peak_95"].unlink(missing_ok=True)
 
         (
             rendered_current,

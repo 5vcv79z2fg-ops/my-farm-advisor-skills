@@ -44,6 +44,7 @@ from paths import (
     farm_report_basename,
     farm_ssurgo_summary_path,
     farm_weather_path,
+    field_dir,
     field_feature_path,
     field_summary_path,
     shared_cdl_preferred_full_composition_path,
@@ -114,55 +115,50 @@ def _field_slug_lookup(inventory_path: Path = _FIELD_INVENTORY) -> dict[str, str
     }
 
 
-def _ndvi_card_titles(field_slug: str | None) -> dict[str, str]:
-    """Read honest card titles (crop-specific or all-vegetation) from the NDVI summary."""
-    defaults = {
-        "ndvi_corn.png": "Corn average NDVI",
-        "ndvi_corn_peak_95.png": "Corn 95th %ile peak NDVI",
-        "ndvi_soybean.png": "Soybean average NDVI",
-        "ndvi_soybean_peak_95.png": "Soybean 95th %ile peak NDVI",
-        "ndvi_current_season_cumulative.png": "Cumulative NDVI by crop and year",
-    }
-    if not field_slug:
-        return defaults
-    summary_path = field_summary_path(
-        _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_card_summary.json"
-    )
-    if not summary_path.exists():
-        return defaults
-    try:
-        payload = json.loads(summary_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return defaults
-    cards = payload.get("cards", {})
-    titles = dict(defaults)
-    for key, filename in {
-        "corn": "ndvi_corn.png",
-        "corn_peak_95": "ndvi_corn_peak_95.png",
-        "soybean": "ndvi_soybean.png",
-        "soybean_peak_95": "ndvi_soybean_peak_95.png",
-        "current_season_cumulative": "ndvi_current_season_cumulative.png",
-    }.items():
-        title = cards.get(key, {}).get("title")
-        if isinstance(title, str) and title:
-            titles[filename] = title
-    return titles
+_NDVI_CARD_DEFAULTS: list[tuple[str, str, str]] = [
+    ("corn", "Corn average NDVI", "ndvi_corn.png"),
+    ("corn_peak_95", "Corn 95th %ile peak NDVI", "ndvi_corn_peak_95.png"),
+    ("soybean", "Soybean average NDVI", "ndvi_soybean.png"),
+    ("soybean_peak_95", "Soybean 95th %ile peak NDVI", "ndvi_soybean_peak_95.png"),
+    (
+        "current_season_cumulative",
+        "Cumulative NDVI by crop and year",
+        "ndvi_current_season_cumulative.png",
+    ),
+]
 
 
 def _ndvi_asset_links(field_slug: str | None) -> list[str]:
+    """Build NDVI links from the summary so names match the rendered basis.
+
+    Both crop slots can point at the shared all-vegetation asset; keep only the
+    first occurrence so the report does not show duplicate images.
+    """
     if not field_slug:
         return []
-    titles = _ndvi_card_titles(field_slug)
-    links = []
-    for filename, default_label in [
-        ("ndvi_corn.png", "Corn average NDVI"),
-        ("ndvi_corn_peak_95.png", "Corn 95th %ile peak NDVI"),
-        ("ndvi_soybean.png", "Soybean average NDVI"),
-        ("ndvi_soybean_peak_95.png", "Soybean 95th %ile peak NDVI"),
-        ("ndvi_current_season_cumulative.png", "Cumulative NDVI by crop and year"),
-    ]:
-        label = titles.get(filename, default_label)
-        path = field_feature_path(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename)
+    summary_path = field_summary_path(
+        _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_card_summary.json"
+    )
+    cards: dict[str, dict] = {}
+    if summary_path.exists():
+        try:
+            payload = json.loads(summary_path.read_text(encoding="utf-8"))
+            cards = payload.get("cards", {})
+        except (OSError, json.JSONDecodeError):
+            cards = {}
+    links: list[str] = []
+    seen_filenames: set[str] = set()
+    for key, default_label, default_filename in _NDVI_CARD_DEFAULTS:
+        entry = cards.get(key, {})
+        output_png = entry.get("output_png")
+        filename = Path(str(output_png)).name if output_png else default_filename
+        if filename in seen_filenames:
+            continue
+        seen_filenames.add(filename)
+        label = str(entry.get("title") or default_label)
+        path = field_feature_path(
+            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename
+        )
         if path.exists():
             links.append(
                 f"[{label}](../../fields/{field_slug}/derived/features/{filename})"
@@ -203,14 +199,8 @@ def main() -> None:
     field_slug_lookup = _field_slug_lookup()
     ndvi_input_paths = []
     for field_slug in field_slug_lookup.values():
-        for filename in (
-            "ndvi_corn.png",
-            "ndvi_corn_peak_95.png",
-            "ndvi_soybean.png",
-            "ndvi_soybean_peak_95.png",
-            "ndvi_current_season_cumulative.png",
-        ):
-            path = field_feature_path(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename)
+        features_dir = field_dir(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug) / "derived" / "features"
+        for path in sorted(features_dir.glob("ndvi_*.png")):
             if path.exists():
                 ndvi_input_paths.append(str(path.relative_to(_REPO)))
 
