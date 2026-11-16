@@ -196,6 +196,33 @@ cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
 
 Add `--dry-run` to print resolved grower/field counts and output paths without writing files, or `--output-dir <path>` to override the destination. Field labels use `<farm display name> — Field <n>` unless `field.json` supplies a `label` or a meaningful `display_name`. Ordinals keep labels stable across reruns even when acreage is recomputed.
 
+## Boundary QC and repair
+
+`scripts/ingest/repair_field_boundaries.py` audits and repairs field boundaries with CDL evidence. It never writes unless `--apply` is passed, and every applied change copies the farm boundary and inventory into `derived/boundary_backups/<timestamp>/`, moves replaced field directories into `derived/retired_fields/<timestamp>/`, and records `manifests/boundary_repair.json`. CDL QC reports land in `manifests/boundary_qc.json`.
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+
+# Audit: per-field corn/soy/pasture/developed composition and suspect flags
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" scripts/ingest/repair_field_boundaries.py \
+  --grower-slug il-dekalb-grower --farm-slug dekalb-north-farm qc
+
+# Split a merged OSM way along its CDL corn/soy interface
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" scripts/ingest/repair_field_boundaries.py \
+  --grower-slug il-dekalb-grower --farm-slug dekalb-north-farm \
+  split --field-id osm-838357183 --apply
+
+# Replace fields with different OSM farmland ways
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" scripts/ingest/repair_field_boundaries.py \
+  --grower-slug ia-story-grower --farm-slug story-central-farm \
+  replace --map osm-1193879887=1193879914 --map osm-1195895933=1195895919 --apply
+```
+
+QC flags are `tiny_field`, `low_crop`, `pasture_dominated`, `developed_dominated`, `merged_field`, and `no_cdl`. `merged_field` means the latest CDL year has both a large corn component and a large soy component, which is the signature of two OSM ways or two real fields merged into one polygon. Split IDs use `-a`/`-b` suffixes and carry `parent_field_id`, `split_method`, `split_year`, and `split_crop_hint`; replacements carry `replaces`.
+
+After a repair, rerun the farm pipeline without `--force`. Delete the farm weather cache first (`derived/tables/<farm>_weather_<start>_<end>.csv`) because weather silently re-stages cached rows for the old field set; soil and CDL detect missing field IDs and refresh on their own, and DEM, SoilGrids, and satellite steps skip unchanged fields through per-field manifests.
+
 ## Default DEM terrain package
 
 Normal farm pipeline initialization and add-field runs that invoke `scripts/run_farm_pipeline.py` include real DEM terrain by default. The pipeline calls `scripts/ingest/download_dem_terrain.py` immediately after field boundary download, passes live real-source permission through `--allow-live-downloads`, and writes elevation, slope, aspect, hillshade, curvature, wetness, depression, relative elevation, and erosion-proxy products under the runtime field tree. Generated farm and field reports do not integrate terrain metrics in this change.

@@ -1386,6 +1386,18 @@ def _append_farm_summary(grower_slug: str, farm_slug: str, row: dict[str, Any]) 
     if path.exists():
         with path.open("r", newline="", encoding="utf-8") as handle:
             rows = list(csv.DictReader(handle))
+    inventory_path = farm_manifest_dir(grower_slug, farm_slug) / "field-inventory.csv"
+    if inventory_path.exists():
+        with inventory_path.open("r", newline="", encoding="utf-8") as handle:
+            active_ids = {
+                str(item["field_id"]) for item in csv.DictReader(handle) if item.get("field_id")
+            }
+        if active_ids:
+            rows = [
+                existing
+                for existing in rows
+                if str(existing.get("field_id")) in active_ids
+            ]
     rows = [existing for existing in rows if existing.get("field_id") != str(row["field_id"])]
     rows.append(row)
     fieldnames = list(row.keys())

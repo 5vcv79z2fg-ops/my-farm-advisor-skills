@@ -440,7 +440,8 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const DATA = __DATA_JSON__;
-const PALETTE = ['#2f6f4e', '#b45309', '#1d4ed8', '#9d174d', '#0f766e', '#6d28d9', '#b91c1c', '#4d7c0f'];
+// Bright, saturated hues stay legible over Esri satellite imagery.
+const PALETTE = ['#00e5ff', '#ff2bd6', '#ffe81a', '#ff7a00', '#c77dff', '#ffffff', '#7cff4f', '#ff4d4d'];
 const DEFAULT_VIEW = [39.5, -98.35];
 
 function esc(value) {
@@ -507,16 +508,16 @@ DATA.features.forEach(function (feature, index) {
   const props = feature.properties;
   const color = PALETTE[index % PALETTE.length];
   const layer = L.geoJSON(feature, {
-    style: {color: color, weight: 2, fillColor: color, fillOpacity: 0.25}
+    style: {color: color, weight: 3, fillColor: color, fillOpacity: 0.18}
   });
   layer.bindPopup(popupHtml(props, color), {maxWidth: 320});
   layer.bindTooltip(props.label, {sticky: true, direction: 'top', opacity: 0.9});
   layer.on('mouseover', function () {
-    layer.setStyle({fillOpacity: 0.45, weight: 3});
+    layer.setStyle({fillOpacity: 0.34, weight: 4});
   });
   layer.on('mouseout', function () {
     if (!selected || selected.id !== props.field_id) {
-      layer.setStyle({fillOpacity: 0.25, weight: 2});
+      layer.setStyle({fillOpacity: 0.18, weight: 3});
     }
   });
   layer.on('click', function () {
@@ -538,10 +539,10 @@ function selectField(fieldId, zoom) {
     return;
   }
   if (selected && selected.id !== fieldId) {
-    selected.layer.setStyle({fillOpacity: 0.25, weight: 2});
+    selected.layer.setStyle({fillOpacity: 0.18, weight: 3});
   }
   selected = record;
-  record.layer.setStyle({fillOpacity: 0.5, weight: 4});
+  record.layer.setStyle({fillOpacity: 0.45, weight: 5});
   record.layer.bringToFront();
   if (zoom) {
     map.fitBounds(record.layer.getBounds(), {padding: [40, 40], maxZoom: 17});
