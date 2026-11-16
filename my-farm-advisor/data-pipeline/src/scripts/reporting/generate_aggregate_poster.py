@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -46,6 +47,7 @@ from paths import (
     farm_ssurgo_summary_path,
     farm_weather_path,
     field_feature_path,
+    field_summary_path,
     shared_cdl_preferred_full_composition_path,
 )
 from pipeline import (
@@ -71,6 +73,60 @@ _CDL_PRIMARY = farm_cdl_preferred_full_composition_path(_DEFAULT_GROWER, _DEFAUL
 _CDL_FALLBACK = shared_cdl_preferred_full_composition_path()
 _DEFAULT_INVENTORY = _REPO / "growers" / _DEFAULT_GROWER / "farms" / _DEFAULT_FARM / "manifests" / "field-inventory.csv"
 _FIELD_INVENTORY = Path(os.environ.get("AG_INVENTORY_CSV", str(_DEFAULT_INVENTORY)))
+
+_NDVI_SPOTLIGHT_DEFAULTS: dict[str, tuple[str, str]] = {
+    "corn": ("Corn average NDVI", "ndvi_corn.png"),
+    "corn_peak_95": ("Corn 95th %ile peak NDVI", "ndvi_corn_peak_95.png"),
+    "soybean": ("Soybean average NDVI", "ndvi_soybean.png"),
+    "soybean_peak_95": ("Soybean 95th %ile peak NDVI", "ndvi_soybean_peak_95.png"),
+    "cumulative": (
+        "Cumulative NDVI by crop and year",
+        "ndvi_current_season_cumulative.png",
+    ),
+}
+_NDVI_SUMMARY_KEYS = {
+    "corn": "corn",
+    "corn_peak_95": "corn_peak_95",
+    "soybean": "soybean",
+    "soybean_peak_95": "soybean_peak_95",
+    "cumulative": "current_season_cumulative",
+}
+
+
+def _ndvi_summary(field_slug: str | None) -> dict[str, dict]:
+    if not field_slug:
+        return {}
+    summary_path = field_summary_path(
+        _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_card_summary.json"
+    )
+    if not summary_path.exists():
+        return {}
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    cards = payload.get("cards", {})
+    return cards if isinstance(cards, dict) else {}
+
+
+def _spotlight_ndvi_assets(field_slug: str) -> dict[str, Path]:
+    cards = _ndvi_summary(field_slug)
+    assets: dict[str, Path] = {}
+    for key, (_, default_filename) in _NDVI_SPOTLIGHT_DEFAULTS.items():
+        output_png = cards.get(_NDVI_SUMMARY_KEYS[key], {}).get("output_png")
+        filename = Path(str(output_png)).name if output_png else default_filename
+        assets[key] = field_feature_path(
+            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename
+        )
+    return assets
+
+
+def _spotlight_ndvi_titles(field_slug: str) -> dict[str, str]:
+    cards = _ndvi_summary(field_slug)
+    return {
+        key: str(cards.get(_NDVI_SUMMARY_KEYS[key], {}).get("title") or default_label)
+        for key, (default_label, _) in _NDVI_SPOTLIGHT_DEFAULTS.items()
+    }
 
 
 def _utm(frow) -> str:
@@ -153,11 +209,12 @@ def _spotlight_field_slug(fields: gpd.GeoDataFrame) -> tuple[str | None, str | N
 
 
 def _image_panel(ax, path: Path | None, title: str, note: str | None = None) -> None:
-    ax.set_title(title, fontsize=9.5, fontweight="bold", loc="left")
     if path is not None and path.exists():
+        # Cards embed their own honest title; a panel title would duplicate it.
         ax.imshow(mpimg.imread(path))
         ax.axis("off")
         return
+    ax.set_title(title, fontsize=9.5, fontweight="bold", loc="left")
     ax.set_axis_off()
     ax.text(
         0.5,
@@ -193,33 +250,10 @@ def main() -> None:
     )
     spotlight_inputs: list[str] = []
     spotlight_assets: dict[str, Path] = {}
+    spotlight_titles: dict[str, str] = {}
     if spotlight_slug:
-        spotlight_assets = {
-            "corn": field_feature_path(
-                config.grower_slug, config.farm_slug, spotlight_slug, "ndvi_corn.png"
-            ),
-            "corn_peak_95": field_feature_path(
-                config.grower_slug,
-                config.farm_slug,
-                spotlight_slug,
-                "ndvi_corn_peak_95.png",
-            ),
-            "soybean": field_feature_path(
-                config.grower_slug, config.farm_slug, spotlight_slug, "ndvi_soybean.png"
-            ),
-            "soybean_peak_95": field_feature_path(
-                config.grower_slug,
-                config.farm_slug,
-                spotlight_slug,
-                "ndvi_soybean_peak_95.png",
-            ),
-            "cumulative": field_feature_path(
-                config.grower_slug,
-                config.farm_slug,
-                spotlight_slug,
-                "ndvi_current_season_cumulative.png",
-            ),
-        }
+        spotlight_assets = _spotlight_ndvi_assets(spotlight_slug)
+        spotlight_titles = _spotlight_ndvi_titles(spotlight_slug)
         spotlight_inputs = [
             str(path.relative_to(_REPO))
             for path in spotlight_assets.values()
@@ -376,34 +410,64 @@ def main() -> None:
     panel.axis("off")
     panel.set_title(spotlight_title, fontsize=11, fontweight="bold", loc="left", pad=8)
     sub = gs[2, :].subgridspec(2, 4, hspace=0.18, wspace=0.2)
+    avg_duplicate = (
+        "corn" in spotlight_assets
+        and "soybean" in spotlight_assets
+        and spotlight_assets["corn"] == spotlight_assets["soybean"]
+    )
+    peak_duplicate = (
+        "corn_peak_95" in spotlight_assets
+        and "soybean_peak_95" in spotlight_assets
+        and spotlight_assets["corn_peak_95"] == spotlight_assets["soybean_peak_95"]
+    )
     _image_panel(
         fig.add_subplot(sub[0, 0]),
         spotlight_assets.get("corn"),
-        "Corn average NDVI",
-        note="Generate NDVI cards to populate this panel.",
+        spotlight_titles.get("corn", "Corn average NDVI"),
+        note=(
+            "All-vegetation card; no corn-specific NDVI was available."
+            if avg_duplicate
+            else "Generate NDVI cards to populate this panel."
+        ),
     )
     _image_panel(
         fig.add_subplot(sub[0, 1]),
         spotlight_assets.get("corn_peak_95"),
-        "Corn 95th %ile peak NDVI",
+        spotlight_titles.get("corn_peak_95", "Corn 95th %ile peak NDVI"),
         note="Generate NDVI cards to populate this panel.",
     )
     _image_panel(
         fig.add_subplot(sub[0, 2]),
-        spotlight_assets.get("soybean"),
-        "Soybean average NDVI",
-        note="Generate NDVI cards to populate this panel.",
+        None if avg_duplicate else spotlight_assets.get("soybean"),
+        (
+            f"{spotlight_titles.get('soybean', 'Soybean average NDVI')} (duplicate hidden)"
+            if avg_duplicate
+            else spotlight_titles.get("soybean", "Soybean average NDVI")
+        ),
+        note=(
+            "Same all-vegetation card as the corn panel; duplicate hidden."
+            if avg_duplicate
+            else "Generate NDVI cards to populate this panel."
+        ),
     )
     _image_panel(
         fig.add_subplot(sub[0, 3]),
-        spotlight_assets.get("soybean_peak_95"),
-        "Soybean 95th %ile peak NDVI",
-        note="Generate NDVI cards to populate this panel.",
+        None if peak_duplicate else spotlight_assets.get("soybean_peak_95"),
+        (
+            f"{spotlight_titles.get('soybean_peak_95', 'Soybean 95th %ile peak NDVI')} (duplicate hidden)"
+            if peak_duplicate
+            else spotlight_titles.get("soybean_peak_95", "Soybean 95th %ile peak NDVI")
+        ),
+        note=(
+            "Same all-vegetation peak card as the corn panel; duplicate hidden."
+            if peak_duplicate
+            else "Generate NDVI cards to populate this panel."
+        ),
     )
     _image_panel(
         fig.add_subplot(sub[1, :]),
         spotlight_assets.get("cumulative"),
-        "Cumulative NDVI by crop and year",
+        spotlight_titles.get("cumulative", "Cumulative NDVI by crop and year"),
         note="Generate NDVI cards to populate this panel.",
     )
 

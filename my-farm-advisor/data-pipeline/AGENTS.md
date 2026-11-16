@@ -80,6 +80,32 @@ cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
   scripts/run_farm_pipeline.py --structure-test
 ```
 
+Generate grower-level interactive field maps for every grower in the runtime:
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/reporting/generate_grower_web_map.py \
+  --grower-slug il-dekalb-grower \
+  --grower-slug ia-story-grower
+```
+
+Writes `growers/<grower>/derived/reports/<grower>_grower_fields_map.html`. Use `--dry-run` to inspect resolved inputs and outputs, and `--output-dir` to override the report root. The map embeds only field polygons and metadata; basemap tiles load from Esri at view time.
+
+Audit and repair field boundaries with CDL evidence before trusting grower maps or NDVI outputs:
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/ingest/repair_field_boundaries.py \
+  --grower-slug il-dekalb-grower \
+  --farm-slug dekalb-north-farm qc
+```
+
+`qc` writes `manifests/boundary_qc.json` and flags tiny, low-crop, pasture-dominated, developed-dominated, and merged fields. `split --field-id <id>` divides a merged OSM way along its CDL corn/soy interface, and `replace --map OLD_ID=NEW_WAY_ID` swaps in a different OSM farmland way. Both mutations are dry-run until `--apply`; applied changes back up the boundary and inventory under `derived/boundary_backups/`, retire old field directories under `derived/retired_fields/`, and write `manifests/boundary_repair.json`. After repair, delete the farm weather cache and rerun the farm pipeline without `--force`.
+
 Run the farm pipeline with default field-location NASA POWER weather and default real DEM terrain. Farm weather samples NASA POWER S3 Zarr at each field centroid, writes the existing farm weather CSV schema, and stages per-field `weather/daily_weather.csv` files. The pipeline invokes `scripts/ingest/download_dem_terrain.py` immediately after field boundary download with live real-source permission, before soil, weather, CDL, satellite, and reporting steps:
 
 ```bash
