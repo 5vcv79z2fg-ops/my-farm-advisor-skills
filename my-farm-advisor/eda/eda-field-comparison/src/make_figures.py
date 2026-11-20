@@ -472,7 +472,7 @@ def figure_rainfall() -> Path | None:
         sub = season[season["region"] == region]
         means, lows, highs = [], [], []
         for year in YEARS:
-            vals = sub.loc[sub["year"] == year, "rain_season_mm"].values
+            vals = sub.loc[sub["year"] == year, "rain_common_mm"].values
             if len(vals) == 0:
                 means.append(np.nan)
                 lows.append(np.nan)
@@ -498,13 +498,13 @@ def figure_rainfall() -> Path | None:
             if hi > lo:
                 ax.plot([xi, xi], [lo, hi], color="#333333", linewidth=0.8)
 
-    # Flag any year whose primary season is short of the 244-day window.
-    for year in sorted(season.loc[~season["season_complete"], "year"].unique()):
+    # Flag any year not complete on the plotted (common) window.
+    for year in sorted(season.loc[~season["common_complete"], "year"].unique()):
         idx = list(YEARS).index(year)
-        top = float(season.loc[season["year"] == year, "rain_season_mm"].max())
-        days = int(season.loc[season["year"] == year, "season_days"].max())
+        top = float(season.loc[season["year"] == year, "rain_common_mm"].max())
+        days = int(season.loc[season["year"] == year, "common_days"].max())
         ax.annotate(
-            f"partial\n{days}/244 d\n(lower bound)",
+            f"partial\n{days}/229 d\n(lower bound)",
             xy=(idx, top),
             xytext=(idx, top + 45),
             ha="center",
@@ -517,23 +517,26 @@ def figure_rainfall() -> Path | None:
 
     ax.set_xticks(x)
     ax.set_xticklabels([str(y) for y in YEARS])
-    ax.set_ylabel("April–November rainfall (mm)")
+    ax.set_ylabel("1 Apr – 15 Nov rainfall (mm)")
     ax.set_title(
-        "Seasonal rainfall by management region, 1 Apr – 30 Nov",
+        "Seasonal rainfall by management region, common window to 15 Nov",
         loc="left",
         fontweight="bold",
-        pad=20,
+        pad=26,
     )
     ax.text(
         0.0,
         1.015,
-        "Bars = region mean, lines = farm range. Season runs to harvest start, so "
-        "November is included. 2026 is measured to 19 Nov and is a lower bound.",
+        "Bars = region mean, lines = farm range. Common 1 Apr – 15 Nov window so "
+        "regions are comparable.\n"
+        "Kanoona's own season runs to 30 Nov; that extra fortnight is reported "
+        "separately.",
         transform=ax.transAxes,
-        fontsize=7.2,
+        fontsize=7.0,
         color="#666666",
         style="italic",
         va="bottom",
+        linespacing=1.35,
     )
     ax.legend(frameon=False, ncol=3, loc="upper right", fontsize=7.5)
     ax.grid(axis="y", color="#ececec", linewidth=0.6)

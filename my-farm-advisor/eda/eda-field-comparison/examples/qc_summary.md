@@ -117,11 +117,12 @@ statistics, both shown wherever the distinction matters.
 
 - Weather is available at farm centroids, not per field. Kanoona's 16 fields
   sit inside a single 0.05° cell, so they share one series.
-- The primary season is 1 April – 30 November (244 days), to match sowing
-  through harvest start. 2026 has data only to 19 November, so its primary
-  season is 233 of 244 days and every 2026 seasonal figure is a lower bound.
-  The 1 April – 31 October window is complete for all five years and is the
-  fair comparison for 2026.
+- Growing seasons differ by farm: Kanoona runs 1 April – 30 November
+  (244 days), the other five farms 1 April – 15 November (229 days).
+  Cross-region comparisons use the common 1 April – 15 November window, which
+  is complete for all 30 farm-years. Kanoona 2026 is the only incomplete
+  farm-season (233 of 244 days; data to 19 November), so its own-season 2026
+  totals are lower bounds.
 - No yield or management input data in this build.
 - Three management regions within one enterprise, not three independent
   growers.

@@ -17,14 +17,15 @@ cache exists.
 
 Season definitions
 ------------------
-The enterprise sows from mid-April to mid/late May and harvests from
-mid/late November to mid/late December, so the primary season runs
-**1 April - 30 November** (244 days). That captures grain fill and the
-November heat that a 31 October cut-off would discard.
+Growing seasons differ by location. Kanoona, further east, runs
+**1 April - 30 November** (244 days). Every other farm runs **1 April -
+15 November** (229 days), matching an earlier harvest start.
 
-A secondary **1 April - 31 October** window (214 days) is carried alongside.
-It stops before harvest but is the only window complete for all five years,
-so it is the apples-to-apples comparison for 2026.
+Because the windows differ in length, a cross-region comparison of raw
+season totals would credit Kanoona with two extra weeks. Every farm therefore
+also carries a **common window of 1 April - 15 November** (229 days), which is
+complete for all 30 farm-years including 2026. Use `common_*` columns to
+compare regions; use `season_*` columns to describe each farm's own season.
 
 Sowing (1 April - 31 May) and flowering (1 September - 31 October) sub-windows
 carry the rainfall and frost exposure that matter at those stages.
@@ -48,6 +49,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -65,22 +67,19 @@ VARIABLES = "RXNJE"
 START = "20220101"
 FINISH = "20261119"
 
-# Primary season: sowing window start through harvest start.
+# Sowing window start. Season end differs by farm: Kanoona runs later.
 SEASON_START = (4, 1)
-SEASON_END = (11, 30)
-SEASON_EXPECTED_DAYS = 244
+SEASON_END_DEFAULT = (11, 15)
+SEASON_END_BY_FARM = {"Kanoona": (11, 30)}
 
-# Secondary season: complete for every year including 2026.
-COMPARISON_END = (10, 31)
-COMPARISON_EXPECTED_DAYS = 214
+# Common window, used for every cross-region comparison.
+COMMON_END = (11, 15)
 
 # Stage windows.
 SOWING_START = (4, 1)
 SOWING_END = (5, 31)
 FLOWERING_START = (9, 1)
 FLOWERING_END = (10, 31)
-NOVEMBER_START = (11, 1)
-NOVEMBER_END = (11, 30)
 
 # GDD bases. Wheat and pasture use 0 degC; canola and legumes 5 degC.
 GDD_BASE_LOW = 0.0
@@ -251,6 +250,15 @@ def _stage(df: pd.DataFrame, start: tuple[int, int], end: tuple[int, int]) -> di
     }
 
 
+def _expected_days(start: tuple[int, int], end: tuple[int, int]) -> int:
+    """Calendar length of a month-day window, on a non-leap reference year."""
+    return (date(2025, end[0], end[1]) - date(2025, start[0], start[1])).days + 1
+
+
+def _window_label(start: tuple[int, int], end: tuple[int, int]) -> str:
+    return f"{start[0]:02d}-{start[1]:02d}..{end[0]:02d}-{end[1]:02d}"
+
+
 def seasonal(frame: pd.DataFrame, farm: str) -> pd.DataFrame:
     df = frame.copy()
     df["year"] = df["date"].dt.year
@@ -263,23 +271,26 @@ def seasonal(frame: pd.DataFrame, farm: str) -> pd.DataFrame:
     df["frost_day"] = (df["tmin"] <= FROST_THRESHOLD).astype(int)
     df["heat_day"] = (df["tmax"] >= HEAT_THRESHOLD).astype(int)
 
+    season_end = SEASON_END_BY_FARM.get(farm, SEASON_END_DEFAULT)
+    season_expected = _expected_days(SEASON_START, season_end)
+    common_expected = _expected_days(SEASON_START, COMMON_END)
+
     rows = []
     for year, grp in df.groupby("year"):
-        season = _stage(grp, SEASON_START, SEASON_END)
-        comparison = _stage(grp, SEASON_START, COMPARISON_END)
+        season = _stage(grp, SEASON_START, season_end)
+        common = _stage(grp, SEASON_START, COMMON_END)
         sowing = _stage(grp, SOWING_START, SOWING_END)
         flowering = _stage(grp, FLOWERING_START, FLOWERING_END)
-        november = _stage(grp, NOVEMBER_START, NOVEMBER_END)
 
         rows.append(
             {
                 "farm": farm,
                 "year": int(year),
-                "season_window": "04-01..11-30",
+                "season_window": _window_label(SEASON_START, season_end),
                 "days_in_record": len(grp),
                 "season_days": season["days"],
-                "season_expected_days": SEASON_EXPECTED_DAYS,
-                "season_complete": season["days"] >= SEASON_EXPECTED_DAYS - 4,
+                "season_expected_days": season_expected,
+                "season_complete": season["days"] >= season_expected - 4,
                 "rain_season_mm": round(season["rain_mm"], 1),
                 "rain_annual_mm": round(float(grp["rain"].sum()), 1),
                 "gdd_base0": round(season["gdd_base0"], 1),
@@ -288,20 +299,25 @@ def seasonal(frame: pd.DataFrame, farm: str) -> pd.DataFrame:
                 "heat_days": season["heat_days"],
                 "radiation_mj": round(season["radiation_mj"], 1),
                 "evap_pan_mm": round(season["evap_pan_mm"], 1),
-                # Secondary season, complete for every year including 2026.
-                "comparison_days": comparison["days"],
-                "comparison_complete": (
-                    comparison["days"] >= COMPARISON_EXPECTED_DAYS - 4
+                # Common window: same dates on every farm, so regions compare.
+                "common_window": _window_label(SEASON_START, COMMON_END),
+                "common_days": common["days"],
+                "common_expected_days": common_expected,
+                "common_complete": common["days"] >= common_expected - 4,
+                "rain_common_mm": round(common["rain_mm"], 1),
+                "gdd_base0_common": round(common["gdd_base0"], 1),
+                "gdd_base5_common": round(common["gdd_base5"], 1),
+                "heat_days_common": common["heat_days"],
+                "frost_days_common": common["frost_days"],
+                # What a longer season adds beyond the common window.
+                "extension_days": season["days"] - common["days"],
+                "rain_extension_mm": round(
+                    season["rain_mm"] - common["rain_mm"], 1
                 ),
-                "rain_apr_oct_mm": round(comparison["rain_mm"], 1),
-                "gdd_base0_apr_oct": round(comparison["gdd_base0"], 1),
-                "gdd_base5_apr_oct": round(comparison["gdd_base5"], 1),
-                "heat_days_apr_oct": comparison["heat_days"],
-                "frost_days_apr_oct": comparison["frost_days"],
-                # Sub-windows.
-                "rain_nov_mm": round(november["rain_mm"], 1),
-                "gdd_base0_nov": round(november["gdd_base0"], 1),
-                "heat_days_nov": november["heat_days"],
+                "gdd_base0_extension": round(
+                    season["gdd_base0"] - common["gdd_base0"], 1
+                ),
+                # Stage sub-windows, inside every farm's season.
                 "rain_sowing_mm": round(sowing["rain_mm"], 1),
                 "frost_days_sowing": sowing["frost_days"],
                 "frost_days_flowering": flowering["frost_days"],
@@ -416,14 +432,15 @@ def main() -> int:
     monthly_df.to_csv(monthly_path, index=False)
 
     summary = seasonal_df.groupby("year").agg(
-        season_days=("season_days", "first"),
+        season_days=("season_days", "max"),
         season_complete=("season_complete", "all"),
+        common_complete=("common_complete", "all"),
         rain_season_mm=("rain_season_mm", "mean"),
-        rain_apr_oct_mm=("rain_apr_oct_mm", "mean"),
+        rain_common_mm=("rain_common_mm", "mean"),
         gdd_base0=("gdd_base0", "mean"),
-        gdd_base0_apr_oct=("gdd_base0_apr_oct", "mean"),
+        gdd_base0_common=("gdd_base0_common", "mean"),
         heat_days=("heat_days", "mean"),
-        heat_days_apr_oct=("heat_days_apr_oct", "mean"),
+        heat_days_common=("heat_days_common", "mean"),
         rain_sowing_mm=("rain_sowing_mm", "mean"),
         frost_days_flowering=("frost_days_flowering", "mean"),
     ).round(1)

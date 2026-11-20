@@ -82,17 +82,24 @@ SILO point data at 0.05° is the primary source. SILO identifies callers by
 email address, supplied as `SILO_EMAIL`; there is no API key. Keep the address
 at runtime and out of every committed file.
 
-The enterprise sows mid-April to mid/late May and harvests mid/late November
-to mid/late December, so the **primary season is 1 April – 30 November**
-(244 days). A 31 October cut-off would discard grain fill and every November
-heat day. A secondary **1 April – 31 October** window (214 days) is carried
-alongside because it is the only window complete for all five years,
-including 2026.
+Growing seasons differ by location. Kanoona, the easternmost farm, runs
+**1 April – 30 November** (244 days). Every other farm runs **1 April –
+15 November** (229 days). The difference is real management, so it is kept in
+the data rather than smoothed away: `season_window`, `season_days` and
+`season_expected_days` record each farm's own dates.
+
+Because a two-week head start would flatter Kanoona in any regional total,
+every farm also carries a **common window of 1 April – 15 November**
+(229 days). That window is complete for all 30 farm-years, including 2026.
+Compare regions on `common_*`; describe one farm on `season_*`.
+`extension_days`, `rain_extension_mm` and `gdd_base0_extension` isolate what
+Kanoona's extra fortnight adds: 15 days and roughly 220–335 GDD₀ in a complete
+year.
 
 Stage sub-windows: sowing 1 April – 31 May (rainfall and establishment frost),
-flowering 1 September – 31 October (frost), November alone (heat). GDD base is
-0 °C for wheat and pasture, 5 °C for canola and legumes; frost is Tmin ≤ 2 °C
-and heat is Tmax ≥ 30 °C.
+flowering 1 September – 31 October (frost). GDD base is 0 °C for wheat and
+pasture, 5 °C for canola and legumes; frost is Tmin ≤ 2 °C and heat is
+Tmax ≥ 30 °C.
 
 Because sowing runs from mid-April to mid-May, a 1 April start is a **ceiling,
 not a sowing date**. Moving the start to 1 May removes roughly 490 GDD across
