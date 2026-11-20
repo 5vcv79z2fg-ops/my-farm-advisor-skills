@@ -117,11 +117,13 @@ DEPTH_LABELS = {
     "100-200cm": ("100_200", 1.00, 2.00),
 }
 
-# Canonical grid URLs for the seven contract properties at the two top depth
-# slabs. "cog" = canonical TERN data store (x-api-key required; GET -> 401
-# keyless on 2026-11-03). "dap" = keyless CSIRO DAP mirror of the same file
-# (collection, file id, bytes; GET -> 302 -> presigned S3 206 on 2026-11-03).
-# "units" is the ProductInfo `Units` field (verified keyless, 2026-11-03).
+# Canonical grid URLs for the seven contract properties across five depth
+# slabs, 0-5cm down to 60-100cm (0-100cm total). "cog" = canonical TERN data
+# store (x-api-key required; GET -> 401 keyless on 2026-11-03, re-probed
+# 2026-11-20 for the added depths). "dap" = keyless CSIRO DAP mirror of the
+# same file (collection, file id, bytes; GET -> 302 -> presigned S3 206 on
+# 2026-11-03). "units" is the ProductInfo `Units` field (verified keyless,
+# 2026-11-03).
 PROPERTY_URLS: dict[str, dict[str, Any]] = {
     "CLAY": {
         "code": "CLY",
@@ -140,6 +142,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap": f"{DAP_API}/collections/63379/data/63820526",
                 "dap_collection": 63379,
                 "dap_file_id": 63820526,
+            },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/CLY/v2/CLY_015_030_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63379/data/63820531",
+                "dap_collection": 63379,
+                "dap_file_id": 63820531,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/CLY/v2/CLY_030_060_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63379/data/63820532",
+                "dap_collection": 63379,
+                "dap_file_id": 63820532,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/CLY/v2/CLY_060_100_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63379/data/63820522",
+                "dap_collection": 63379,
+                "dap_file_id": 63820522,
             },
         },
     },
@@ -161,6 +181,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap_collection": 63365,
                 "dap_file_id": 64206511,
             },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/SLT/v2/SLT_015_030_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63365/data/64206514",
+                "dap_collection": 63365,
+                "dap_file_id": 64206514,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/SLT/v2/SLT_030_060_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63365/data/64206517",
+                "dap_collection": 63365,
+                "dap_file_id": 64206517,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/SLT/v2/SLT_060_100_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63365/data/64206520",
+                "dap_collection": 63365,
+                "dap_file_id": 64206520,
+            },
         },
     },
     "SAND": {
@@ -180,6 +218,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap": f"{DAP_API}/collections/63366/data/63820452",
                 "dap_collection": 63366,
                 "dap_file_id": 63820452,
+            },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/SND/v2/SND_015_030_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63366/data/63820455",
+                "dap_collection": 63366,
+                "dap_file_id": 63820455,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/SND/v2/SND_030_060_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63366/data/63820458",
+                "dap_collection": 63366,
+                "dap_file_id": 63820458,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/SND/v2/SND_060_100_EV_N_P_AU_TRN_N_20210902.tif",
+                "dap": f"{DAP_API}/collections/63366/data/63820461",
+                "dap_collection": 63366,
+                "dap_file_id": 63820461,
             },
         },
     },
@@ -201,6 +257,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap_collection": 63381,
                 "dap_file_id": 63828033,
             },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/CEC/v1/CEC_015_030_EV_N_P_AU_TRN_N_20220826.tif",
+                "dap": f"{DAP_API}/collections/63381/data/63828036",
+                "dap_collection": 63381,
+                "dap_file_id": 63828036,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/CEC/v1/CEC_030_060_EV_N_P_AU_TRN_N_20220826.tif",
+                "dap": f"{DAP_API}/collections/63381/data/63828039",
+                "dap_collection": 63381,
+                "dap_file_id": 63828039,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/CEC/v1/CEC_060_100_EV_N_P_AU_TRN_N_20220826.tif",
+                "dap": f"{DAP_API}/collections/63381/data/63828042",
+                "dap_collection": 63381,
+                "dap_file_id": 63828042,
+            },
         },
     },
     "PHCALCIUMCHLORIDE": {
@@ -220,6 +294,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap": f"{DAP_API}/collections/62186/data/74114808",
                 "dap_collection": 62186,
                 "dap_file_id": 74114808,
+            },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/pHc/v2/PHC_015_030_EV_N_P_AU_NAT_C_20210913.tif",
+                "dap": f"{DAP_API}/collections/62186/data/74114810",
+                "dap_collection": 62186,
+                "dap_file_id": 74114810,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/pHc/v2/PHC_030_060_EV_N_P_AU_NAT_C_20210913.tif",
+                "dap": f"{DAP_API}/collections/62186/data/74114811",
+                "dap_collection": 62186,
+                "dap_file_id": 74114811,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/pHc/v2/PHC_060_100_EV_N_P_AU_NAT_C_20210913.tif",
+                "dap": f"{DAP_API}/collections/62186/data/74114824",
+                "dap_collection": 62186,
+                "dap_file_id": 74114824,
             },
         },
     },
@@ -244,6 +336,27 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap_file_id": 63825313,
                 "dap_note": "DAP mirror is the same-date SOC_005_015_EV_N_P_AU_NAT_N build",
             },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/SOC/90m/v2/SOC_015_030_EV_N_P_AU_TRN_N_20220727.tif",
+                "dap": f"{DAP_API}/collections/58215/data/63825316",
+                "dap_collection": 58215,
+                "dap_file_id": 63825316,
+                "dap_note": "DAP mirror is the same-date SOC_015_030_EV_N_P_AU_NAT_N build",
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/SOC/90m/v2/SOC_030_060_EV_N_P_AU_TRN_N_20220727.tif",
+                "dap": f"{DAP_API}/collections/58215/data/63825319",
+                "dap_collection": 58215,
+                "dap_file_id": 63825319,
+                "dap_note": "DAP mirror is the same-date SOC_030_060_EV_N_P_AU_NAT_N build",
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/SOC/90m/v2/SOC_060_100_EV_N_P_AU_TRN_N_20220727.tif",
+                "dap": f"{DAP_API}/collections/58215/data/63825322",
+                "dap_collection": 58215,
+                "dap_file_id": 63825322,
+                "dap_note": "DAP mirror is the same-date SOC_060_100_EV_N_P_AU_NAT_N build",
+            },
         },
     },
     "BULKDENSITY": {
@@ -263,6 +376,24 @@ PROPERTY_URLS: dict[str, dict[str, Any]] = {
                 "dap": f"{DAP_API}/collections/63382/data/65273482",
                 "dap_collection": 63382,
                 "dap_file_id": 65273482,
+            },
+            "15-30cm": {
+                "cog": f"{COG_STORE}/BDW/v2/BDW_015_030_EV_N_P_AU_TRN_N_20230607.tif",
+                "dap": f"{DAP_API}/collections/63382/data/65273485",
+                "dap_collection": 63382,
+                "dap_file_id": 65273485,
+            },
+            "30-60cm": {
+                "cog": f"{COG_STORE}/BDW/v2/BDW_030_060_EV_N_P_AU_TRN_N_20230607.tif",
+                "dap": f"{DAP_API}/collections/63382/data/65273488",
+                "dap_collection": 63382,
+                "dap_file_id": 65273488,
+            },
+            "60-100cm": {
+                "cog": f"{COG_STORE}/BDW/v2/BDW_060_100_EV_N_P_AU_TRN_N_20230607.tif",
+                "dap": f"{DAP_API}/collections/63382/data/65273491",
+                "dap_collection": 63382,
+                "dap_file_id": 65273491,
             },
         },
     },
