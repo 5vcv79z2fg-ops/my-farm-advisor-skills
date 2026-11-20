@@ -26,7 +26,6 @@ from lib.satellite_imagery import (  # noqa: E402
     compute_sentinel_ndvi,
     feature_cloud_cover,
     feature_datetime,
-    growing_season_range,
     landsat_asset_keys,
     SatelliteSearchError,
     search_features,
@@ -46,7 +45,50 @@ ensure_skill_path("farm-intelligence-reporting")
 
 from pipeline import FieldReportingConfig  # noqa: E402  # pyright: ignore[reportMissingImports]
 
-_GROWING_SEASON_MONTHS = (3, 4, 5, 6, 7, 8, 9, 10, 11)
+_SEASON_START_MD = os.environ.get("AG_SEASON_START_MD", "03-01").strip() or "03-01"
+_SEASON_END_MD = os.environ.get("AG_SEASON_END_MD", "11-30").strip() or "11-30"
+
+
+def _season_months() -> tuple[int, ...]:
+    """Candidate months inside the requested season window.
+
+    Defaults keep the US behaviour (Mar-Nov). The AU branch narrows the end to
+    Nov 15 on the non-Kanoona farms so no scene is selected after the season
+    the reports actually describe.
+    """
+    start = int(_SEASON_START_MD.split("-")[0])
+    end = int(_SEASON_END_MD.split("-")[0])
+    return tuple(range(start, end + 1))
+
+
+_GROWING_SEASON_MONTHS = _season_months()
+
+
+def _season_range(year: int) -> str:
+    return f"{year}-{_SEASON_START_MD}T00:00:00Z/{year}-{_SEASON_END_MD}T23:59:59Z"
+
+
+def _sensors_requested() -> tuple[str, ...]:
+    """Sensor families to fetch. US default is both; AU sets ``sentinel`` alone.
+
+    Sentinel-2 stays the single source for the AU branch: its 10 m bands carry
+    the field detail, and mixing Landsat 30 m into the same monthly composite
+    would silently change the pixel support between months.
+    """
+    raw = os.environ.get("AG_SENSORS", "sentinel,landsat")
+    wanted = tuple(token.strip().lower() for token in raw.split(",") if token.strip())
+    unknown = sorted(set(wanted) - {"sentinel", "landsat"})
+    if unknown:
+        raise SystemExit(f"AG_SENSORS has unknown entries {unknown}; use sentinel/landsat")
+    return wanted
+
+
+def _imagery_years(default: tuple[int, ...]) -> tuple[int, ...]:
+    raw = os.environ.get("AG_IMAGERY_YEARS", "").strip()
+    if not raw:
+        return default
+    years = tuple(sorted({int(token) for token in raw.split(",") if token.strip()}))
+    return years or default
 
 
 def _field_slug_lookup(inventory_path: Path = _FIELD_INVENTORY) -> dict[str, str]:
@@ -171,8 +213,24 @@ def _year_entry_fully_reusable(
     return True, reusable
 
 
+def _scenes_per_month() -> int:
+    """Candidate scenes kept per month.
+
+    The STAC ``eo:cloud_cover`` is a 110 km tile statistic, so the tile's
+    clearest scene is often the most clouded one over a single paddock. Keeping
+    more than one candidate lets the NDVI stage pick by *measured* visible
+    fraction inside the paddock; the output still uses one scene per month.
+    """
+    try:
+        value = int(os.environ.get("AG_SCENES_PER_MONTH", "1"))
+    except ValueError:
+        value = 1
+    return max(1, min(value, 4))
+
+
 def _select_scene_inventory(
-    features: list[dict[str, Any]], *, max_scenes_per_year: int
+    features: list[dict[str, Any]], *, max_scenes_per_year: int,
+    per_month: int = 1,
 ) -> list[dict[str, Any]]:
     sorted_features = sorted(
         features,
@@ -191,11 +249,85 @@ def _select_scene_inventory(
     selected: list[dict[str, Any]] = []
     for month in _GROWING_SEASON_MONTHS:
         monthly = by_month.get(month, [])
-        if not monthly:
-            continue
-        selected.append(monthly[0])
+        # Two items of the same acquisition (different processing baselines)
+        # give no second chance at seeing the paddock, so a candidate slot only
+        # counts once per calendar date.
+        distinct: dict[str, dict[str, Any]] = {}
+        for feature in monthly:  # already cloud-ascending
+            distinct.setdefault(
+                feature_datetime(feature).date().isoformat(), feature
+            )
+        selected.extend(list(distinct.values())[:per_month])
 
     return selected[:max_scenes_per_year]
+
+
+def _month_availability(features: list[dict[str, Any]]) -> dict[str, int]:
+    """Distinct acquisition dates available per season month, under the gate.
+
+    Recorded in the manifest so a later run can tell "this month only ever had
+    one usable date" from "this month still has candidates to fetch", without
+    searching again.
+    """
+    dates: dict[int, set[str]] = {}
+    for feature in features:
+        moment = feature_datetime(feature)
+        if moment.month not in _GROWING_SEASON_MONTHS:
+            continue
+        dates.setdefault(moment.month, set()).add(moment.date().isoformat())
+    return {str(month): len(values) for month, values in dates.items()}
+
+
+def _distinct_dates_by_month(scenes: list[dict[str, Any]]) -> dict[int, int]:
+    dates: dict[int, set[str]] = {}
+    for scene in scenes:
+        date = str(scene.get("scene_date", ""))
+        if not date:
+            continue
+        dates.setdefault(int(date[5:7]), set()).add(date)
+    return {month: len(values) for month, values in dates.items()}
+
+
+def _candidates_are_exhausted(
+    entry: dict[str, Any] | None, scenes: list[dict[str, Any]], per_month: int
+) -> bool:
+    """True when every month already holds as many distinct dates as exist."""
+    availability = (entry or {}).get("month_candidate_availability") or {}
+    if not availability:
+        return False
+    have = _distinct_dates_by_month(scenes)
+    for month, available in availability.items():
+        need = min(per_month, int(available))
+        if have.get(int(month), 0) < need:
+            return False
+    return True
+
+
+def _sentinel_cloud_max(default: float) -> float:
+    """Scene-level cloud ceiling for the Sentinel search.
+
+    US default stays 20 %. The AU branch raises it to 70 %: ``eo:cloud_cover``
+    describes a 110 x 110 km tile, and a 30 % cloudy tile is routinely clear
+    over a 20 ha paddock. Selection still ranks by cloud, and the per-field
+    decision is made later on the measured masked-pixel fraction - so a truly
+    overcast pass is dropped on evidence, not on tile statistics.
+    """
+    raw = os.environ.get("AG_SENTINEL_CLOUD_MAX", "").strip()
+    return float(raw) if raw else default
+
+
+def _declared_cloud_cover(feature: dict[str, Any]) -> float | None:
+    """Scene-level cloud cover as declared by the provider, or None.
+
+    Reprocessed Sentinel-2 items in the archive sometimes omit
+    ``eo:cloud_cover``. Recording ``None`` keeps that distinction; substituting
+    the 100.0 default would read as a hopelessly cloudy scene in every
+    downstream table.
+    """
+    value = feature.get("properties", {}).get("eo:cloud_cover")
+    if value is None:
+        return None
+    return round(float(value), 3)
 
 
 def _download_sentinel_scene(
@@ -230,7 +362,7 @@ def _download_sentinel_scene(
     return {
         "scene_id": feature["id"],
         "scene_date": scene_date.date().isoformat(),
-        "cloud_cover": round(feature_cloud_cover(feature), 3),
+        "cloud_cover": _declared_cloud_cover(feature),
         "status": "complete",
         "raw_tiffs": {
             "red": _relative_to_repo(red_path),
@@ -274,7 +406,7 @@ def _download_landsat_scene(
     return {
         "scene_id": feature["id"],
         "scene_date": scene_date.date().isoformat(),
-        "cloud_cover": round(feature_cloud_cover(feature), 3),
+        "cloud_cover": _declared_cloud_cover(feature),
         "status": "complete",
         "raw_tiffs": {
             "red": _relative_to_repo(red_path),
@@ -345,6 +477,16 @@ def _download_sensor_archive(
             can_reuse_year, reusable_scenes = _year_entry_fully_reusable(
                 previous_entry, sensor_root=sensor_root, sensor=sensor
             )
+            if can_reuse_year and not _candidates_are_exhausted(
+                previous_entry, reusable_scenes, _scenes_per_month()
+            ):
+                # files are reusable but a month still has unfetched dates, so
+                # fall through to the search and top the year up
+                print(
+                    f"top-up {field_id} {sensor} {year} "
+                    "(fewer distinct candidate dates than available)"
+                )
+                can_reuse_year = False
             if can_reuse_year:
                 coverage_months = sorted(
                     {
@@ -361,6 +503,10 @@ def _download_sensor_archive(
                     {
                         "year": year,
                         "status": "complete",
+                        "month_candidate_availability": (
+                            (previous_entry or {}).get("month_candidate_availability")
+                            or {}
+                        ),
                         "scene_count": len(reusable_scenes),
                         "coverage_months": coverage_months,
                         "missing_months": missing_months,
@@ -382,11 +528,20 @@ def _download_sensor_archive(
             features = search_features(
                 collection,
                 tuple(field_geom.bounds),
-                growing_season_range(year),
+                _season_range(year),
                 cloud_cover_max,
-                limit=max(60, max_scenes_per_year * 8),
+                limit=max(200, max_scenes_per_year * 30),
             )
         except SatelliteSearchError as exc:
+            if previous_entry is not None and previous_entry.get("scenes"):
+                # the catalogue is unreachable but this year is already on disk:
+                # keep what exists rather than turning a good year into a gap
+                year_entries.append(previous_entry)
+                print(
+                    f"warn  {field_id} {sensor} {year} search failed: {exc} "
+                    "(kept existing scenes)"
+                )
+                continue
             year_entries.append(
                 {
                     "year": year,
@@ -402,7 +557,8 @@ def _download_sensor_archive(
             print(f"warn  {field_id} {sensor} {year} search failed: {exc}")
             continue
         selected_features = _select_scene_inventory(
-            features, max_scenes_per_year=max_scenes_per_year
+            features, max_scenes_per_year=max_scenes_per_year,
+            per_month=_scenes_per_month(),
         )
         if not selected_features:
             year_entries.append(
@@ -470,6 +626,7 @@ def _download_sensor_archive(
             {
                 "year": year,
                 "status": "complete" if scenes else "missing",
+                "month_candidate_availability": _month_availability(features),
                 "scene_count": len(scenes),
                 "coverage_months": coverage_months,
                 "missing_months": missing_months,
@@ -505,6 +662,10 @@ def main() -> None:
         farm_name=_DEFAULT_FARM_NAME,
         field_boundary_path=str(farm_boundary_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
     )
+    imagery_years = _imagery_years(config.imagery_years)
+    sensors = _sensors_requested()
+    print(f"sensors: {', '.join(sensors)} | years: {imagery_years}")
+    print(f"season window: {_SEASON_START_MD} -> {_SEASON_END_MD} (months {_GROWING_SEASON_MONTHS})")
     field_slugs = _field_slug_lookup()
     fields = gpd.read_file(_REPO / config.field_boundary_path).to_crs("EPSG:4326")
 
@@ -515,32 +676,34 @@ def main() -> None:
             print(f"skip  {field_id} no field slug")
             continue
         _ensure_field_boundary(field, _DEFAULT_GROWER, _DEFAULT_FARM, field_slug)
-        _download_sensor_archive(
-            field_id=field_id,
-            field_slug=field_slug,
-            field_geom=field.geometry,
-            grower_slug=_DEFAULT_GROWER,
-            farm_slug=_DEFAULT_FARM,
-            years=config.imagery_years,
-            sensor="sentinel",
-            collection=SENTINEL_COLLECTION,
-            cloud_cover_max=config.sentinel_cloud_cover_max,
-            max_scenes_per_year=9,
-            force=force,
-        )
-        _download_sensor_archive(
-            field_id=field_id,
-            field_slug=field_slug,
-            field_geom=field.geometry,
-            grower_slug=_DEFAULT_GROWER,
-            farm_slug=_DEFAULT_FARM,
-            years=config.imagery_years,
-            sensor="landsat",
-            collection=LANDSAT_COLLECTION,
-            cloud_cover_max=config.landsat_cloud_cover_max,
-            max_scenes_per_year=9,
-            force=force,
-        )
+        if "sentinel" in sensors:
+            _download_sensor_archive(
+                field_id=field_id,
+                field_slug=field_slug,
+                field_geom=field.geometry,
+                grower_slug=_DEFAULT_GROWER,
+                farm_slug=_DEFAULT_FARM,
+                years=imagery_years,
+                sensor="sentinel",
+                collection=SENTINEL_COLLECTION,
+                cloud_cover_max=_sentinel_cloud_max(config.sentinel_cloud_cover_max),
+                max_scenes_per_year=9 * _scenes_per_month(),
+                force=force,
+            )
+        if "landsat" in sensors:
+            _download_sensor_archive(
+                field_id=field_id,
+                field_slug=field_slug,
+                field_geom=field.geometry,
+                grower_slug=_DEFAULT_GROWER,
+                farm_slug=_DEFAULT_FARM,
+                years=imagery_years,
+                sensor="landsat",
+                collection=LANDSAT_COLLECTION,
+                cloud_cover_max=config.landsat_cloud_cover_max,
+                max_scenes_per_year=9,
+                force=force,
+            )
 
     print("\n✓ Raw satellite TIFF download complete")
 
