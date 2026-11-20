@@ -100,6 +100,71 @@ CROP_GROUP: dict[str, str] = {
 # Paddock is permanent pasture for all five years, so it cannot rotate.
 PERMANENT_PASTURE = {1153780}
 
+# Dual-purpose wheat: grazed through winter, locked up mid-to-late August and
+# then harvested for grain. Grower-confirmed for Kanoona wheat in 2022 and
+# 2023 only. From 2024 every wheat crop is grain-only. '' is the default.
+DUAL_PURPOSE_WHEAT: set[tuple[str, int]] = {("Kanoona", 2022), ("Kanoona", 2023)}
+
+USE_TYPE_GRAIN = "grain"
+USE_TYPE_DUAL = "dual_purpose"
+
+# Management departures from the default farm programme. One row per event;
+# dates are windows because lock-up timing was recalled to the month only.
+# Consumers: fetch_weather.py (early sowing moves the season start) and the
+# NDVI steps (grazing changes what a low winter NDVI means).
+MANAGEMENT_EVENTS: list[dict[str, str]] = [
+    {
+        "farm": "Kanoona",
+        "year": "2023",
+        "crop": "Wheat",
+        "event": "early_sow",
+        "start_date": "2023-03-15",
+        "end_date": "2023-03-15",
+        "confidence": "day",
+        "source": "grower, 2026-11-20",
+    },
+    {
+        "farm": "Kanoona",
+        "year": "2022",
+        "crop": "Wheat",
+        "event": "grazing_lockup",
+        "start_date": "2022-08-15",
+        "end_date": "2022-08-31",
+        "confidence": "month",
+        "source": "grower recall, 2026-11-20",
+    },
+    {
+        "farm": "Kanoona",
+        "year": "2023",
+        "crop": "Wheat",
+        "event": "grazing_lockup",
+        "start_date": "2023-08-15",
+        "end_date": "2023-08-31",
+        "confidence": "month",
+        "source": "grower recall, 2026-11-20",
+    },
+]
+
+
+def use_type_for(farm: str, year: int, crop: str) -> str:
+    """Grain-only unless the grower grazed this farm-year's wheat."""
+    if crop == "Wheat" and (farm, int(year)) in DUAL_PURPOSE_WHEAT:
+        return USE_TYPE_DUAL
+    return USE_TYPE_GRAIN
+
+
+def early_sow_start(farm: str, year: int, crop: str) -> str:
+    """First day of the crop's growing window, honouring a recorded early sow."""
+    for event in MANAGEMENT_EVENTS:
+        if (
+            event["event"] == "early_sow"
+            and event["farm"] == farm
+            and int(event["year"]) == int(year)
+            and event["crop"] == crop
+        ):
+            return event["start_date"]
+    return ""
+
 _SHORT_CROP = {
     "Narrow Leaf Lupin": "Lupin",
     "Faba/Broad/Field Bean": "Faba",

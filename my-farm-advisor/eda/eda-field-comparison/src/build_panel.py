@@ -20,6 +20,7 @@ from shapely.ops import unary_union
 from common import (
     CONFIRMED_RECORDS,
     CROP_GROUP,
+    MANAGEMENT_EVENTS,
     PERMANENT_PASTURE,
     REGION_BY_FARM,
     YEARS,
@@ -28,6 +29,7 @@ from common import (
     components_for,
     load_all,
     short_crop,
+    use_type_for,
 )
 
 OUT_DIR = Path(__file__).resolve().parents[1] / "examples"
@@ -40,6 +42,7 @@ COLUMNS = [
     "year",
     "status",
     "land_use",
+    "use_type",
     "area_ha_reported",
     "area_ha_geom",
     "area_ha_noncropped",
@@ -156,6 +159,7 @@ def build() -> pd.DataFrame:
                         "year": year,
                         "status": "not_managed",
                         "land_use": land_use,
+                        "use_type": "",
                         "area_ha_reported": None,
                         "area_ha_geom": None,
                         "area_ha_noncropped": None,
@@ -186,6 +190,7 @@ def build() -> pd.DataFrame:
                     "year": year,
                     "status": "observed",
                     "land_use": land_use,
+                    "use_type": use_type_for(farm, year, crop),
                     "area_ha_reported": round(resolved["area_ha_reported"], 2),
                     "area_ha_geom": round(resolved["area_ha_geom"], 2),
                     "area_ha_noncropped": _round_nonzero(
@@ -246,6 +251,11 @@ def main() -> None:
     spine_path = OUT_DIR / "rotation_spine.csv"
     spine.to_csv(spine_path, index=False)
 
+    events = pd.DataFrame(MANAGEMENT_EVENTS)
+    events = events.sort_values(["farm", "year", "start_date"]).reset_index(drop=True)
+    events_path = OUT_DIR / "management_events.csv"
+    events.to_csv(events_path, index=False)
+
     observed = df[df["status"] == "observed"]
     print(f"panel rows          : {len(df)}")
     print(f"observed field-years: {len(observed)}")
@@ -268,6 +278,7 @@ def main() -> None:
     print()
     print(f"wrote {panel_path}")
     print(f"wrote {spine_path}")
+    print(f"wrote {events_path}")
 
 
 if __name__ == "__main__":
