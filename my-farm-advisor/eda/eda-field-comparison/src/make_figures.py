@@ -121,15 +121,16 @@ def figure_field_area(panel: pd.DataFrame) -> Path:
             linewidth=0.5,
             zorder=3,
         )
-        ax.text(
-            0.985,
-            i + 0.30,
+        ax.annotate(
             f"n = {len(vals)}",
-            transform=ax.get_yaxis_transform(),
-            ha="right",
-            va="center",
+            xy=(float(np.max(vals)), i),
+            xytext=(0, 9),
+            textcoords="offset points",
+            ha="center",
+            va="bottom",
             fontsize=8,
             color=colour,
+            fontweight="bold",
         )
 
     ax.set_yticks(range(len(REGIONS)))
@@ -242,12 +243,26 @@ def _nice_bar(span_km: float) -> float:
     return 1.0
 
 
-def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
+def _draw_panel(
+    ax,
+    items,
+    title,
+    label_font=5.2,
+    show_labels=True,
+    colour_by="crop",
+    north_arrow=True,
+):
     xs0, ys0, xs1, ys1 = [], [], [], []
-    for km_geom, crop, name in items:
-        key = crop if crop else "Not managed"
-        colour = CROP_COLOUR.get(key, "#bbbbbb")
-        hatch = "///" if key == "Not managed" else None
+    for km_geom, crop, name, region in items:
+        if colour_by == "region":
+            colour = REGION_COLOUR.get(region, "#bbbbbb")
+            hatch = None
+            alpha = 0.92
+        else:
+            key = crop if crop else "Not managed"
+            colour = CROP_COLOUR.get(key, "#bbbbbb")
+            hatch = "///" if key == "Not managed" else None
+            alpha = 0.95 if hatch is None else 0.55
         for poly in _polygons(km_geom):
             xs, ys = poly.exterior.xy
             ax.add_patch(
@@ -255,10 +270,10 @@ def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
                     list(zip(xs, ys)),
                     closed=True,
                     facecolor=colour,
-                    edgecolor="#2b2b2b",
+                    edgecolor="#3a3a3a",
                     linewidth=0.5,
                     hatch=hatch,
-                    alpha=0.95 if hatch is None else 0.55,
+                    alpha=alpha,
                 )
             )
         b = km_geom.bounds
@@ -266,8 +281,11 @@ def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
 
     minx, miny, maxx, maxy = min(xs0), min(ys0), max(xs1), max(ys1)
     pad = max(maxx - minx, maxy - miny) * 0.09
+    # Reserve an empty band at the top so the north arrow can never land on a
+    # paddock or a label, whatever the panel extent happens to be.
+    top = maxy + pad * (2.9 if north_arrow else 1.2)
     ax.set_xlim(minx - pad, maxx + pad)
-    ax.set_ylim(miny - pad * 1.8, maxy + pad * 1.2)
+    ax.set_ylim(miny - pad * 1.8, top)
 
     if show_labels:
         span_hint = max(maxx - minx, maxy - miny)
@@ -277,7 +295,7 @@ def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
         ordered = sorted(
             items, key=lambda t: (-t[0].centroid.y, t[0].centroid.x)
         )
-        for km_geom, crop, name in ordered:
+        for km_geom, crop, name, region in ordered:
             if not name:
                 continue
             c = km_geom.centroid
@@ -291,6 +309,10 @@ def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
                 if attempt % 2 == 1:
                     lx -= sep * 0.9
             placed.append((lx, ly))
+            # Keep every label inside the plotted footprint; a label pushed
+            # outside the axes reads as a stray mark rather than data.
+            lx = min(max(lx, minx), maxx)
+            ly = min(max(ly, miny), maxy)
             ax.annotate(
                 name,
                 (lx, ly),
@@ -312,10 +334,26 @@ def _draw_panel(ax, items, title, label_font=5.2, show_labels=True):
 
     span = maxx - minx
     bar = _nice_bar(span)
-    x_bar = minx - pad * 0.35
+    # Bottom-right: the corner that stays clear in every panel of this figure.
+    x_bar = maxx - bar - pad * 0.15
     y_bar = miny - pad * 0.75
     ax.plot([x_bar, x_bar + bar], [y_bar, y_bar], color="#222222", linewidth=2.0)
     ax.text(x_bar + bar / 2, y_bar + pad * 0.22, f"{bar:.0f} km", ha="center", fontsize=6.2)
+
+    if north_arrow:
+        ax.annotate(
+            "N",
+            xy=(0.968, 0.972),
+            xytext=(0.968, 0.905),
+            xycoords="axes fraction",
+            textcoords="axes fraction",
+            ha="center",
+            va="center",
+            fontsize=7.5,
+            fontweight="bold",
+            zorder=10,
+            arrowprops=dict(arrowstyle="-|>", color="#222222", lw=1.0),
+        )
 
     ax.set_title(title, loc="left", fontweight="bold", fontsize=9)
     ax.set_aspect("equal")
@@ -351,18 +389,19 @@ def figure_map(panel: pd.DataFrame) -> Path:
     ax_over = fig.add_subplot(gs[0, 0])
     _draw_panel(
         ax_over,
-        [(g, c, "") for g, c, _, _ in items],
-        "Overview — all 33 paddocks",
+        items,
+        "Overview — all 33 paddocks, region colour, drawn to scale",
         show_labels=False,
+        colour_by="region",
     )
     for region in REGIONS:
         pts = [g.centroid for g, _, _, r in items if r == region]
         cx = float(np.mean([p.x for p in pts]))
-        cy = float(np.mean([p.y for p in pts]))
+        top_y = max(p.y for p in pts)
         ax_over.text(
-            cx, cy, region, fontsize=9, fontweight="bold",
-            color=REGION_COLOUR[region], ha="center", va="center", zorder=8,
-            bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.75),
+            cx, top_y + 2.4, region, fontsize=8.5, fontweight="bold",
+            color=REGION_COLOUR[region], ha="center", va="bottom", zorder=9,
+            bbox=dict(boxstyle="round,pad=0.22", fc="white", ec="none", alpha=0.85),
         )
     ax_over.set_xlabel("Easting (km, EPSG:3577)", fontsize=7)
     ax_over.set_ylabel("Northing (km, EPSG:3577)", fontsize=7)
@@ -373,7 +412,7 @@ def figure_map(panel: pd.DataFrame) -> Path:
         "Lease country": fig.add_subplot(gs[1, 1]),
     }
     for region, ax in region_axes.items():
-        subset = [(g, c, n) for g, c, n, r in items if r == region]
+        subset = [it for it in items if it[3] == region]
         _draw_panel(
             ax,
             subset,
@@ -394,7 +433,8 @@ def figure_map(panel: pd.DataFrame) -> Path:
     )
     fig.legend(
         handles=handles, loc="lower center", ncol=8, frameon=False,
-        fontsize=8, bbox_to_anchor=(0.5, 0.005), title="2026 crop",
+        fontsize=8, bbox_to_anchor=(0.5, 0.005),
+        title="2026 crop (region panels; overview is coloured by region)",
         title_fontsize=8,
     )
     fig.suptitle(
