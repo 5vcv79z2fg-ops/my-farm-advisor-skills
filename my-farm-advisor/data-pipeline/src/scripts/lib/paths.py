@@ -37,6 +37,22 @@ def validate_path_slug(value: str, label: str = "slug") -> str:
     return slug
 
 
+def runtime_relative(path: Path) -> str:
+    """Serialize *path* root-relative to ``DATA_ROOT`` (portable journal form).
+
+    Persisted provenance is the git/portable layer of the pipeline: absolute
+    paths break the moment the tree moves, is cloned to another machine, or is
+    served from a draft prefix. Write roots keep their absolute form for one
+    minor for back-compat; new writers must record ``*_rel`` siblings produced
+    by this helper. Paths outside the runtime root return absolute unchanged.
+    """
+    resolved = Path(path)
+    try:
+        return resolved.resolve().relative_to(DATA_ROOT.resolve()).as_posix()
+    except (ValueError, OSError):
+        return str(resolved)
+
+
 def ensure_data_root_path(path: Path) -> Path:
     candidate = Path(path)
     if not candidate.is_absolute():
@@ -192,6 +208,14 @@ def farm_weather_path(
 
 def farm_ssurgo_full_path(grower_slug: str, farm_slug: str) -> Path:
     return farm_table_path(grower_slug, farm_slug, farm_ssurgo_full_basename(farm_slug))
+
+
+def farm_ssurgo_restrictions_path(grower_slug: str, farm_slug: str) -> Path:
+    return farm_table_path(grower_slug, farm_slug, f"{farm_slug}_ssurgo_restrictions.csv")
+
+
+def field_soil_restrictions_path(grower_slug: str, farm_slug: str, field_slug: str) -> Path:
+    return field_soil_dir(grower_slug, farm_slug, field_slug) / "ssurgo_restrictions.csv"
 
 
 def farm_ssurgo_summary_path(grower_slug: str, farm_slug: str) -> Path:

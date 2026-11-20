@@ -234,17 +234,21 @@ def clip_dem_tiles_to_buffer(
             dtype=output_dtype,
         )
 
-        buffered_source = _geometry_to_crs(
+        _buffered_source = _geometry_to_crs(
             analysis.buffered_geometry_analysis,
             analysis.analysis_crs,
             source_crs,
         )
+        # Raster policy (2026-11-05, revised same day): stored clips are
+        # clipped to the field POLYGON + uniform halo (5 % of the field's
+        # max length, >=1 cell -- raster_rules.field_buffer_m). merge()
+        # cropped to the buffered bounds; this mask trims the corners to
+        # the halo, so every source stores the same field-shaped footprint
+        # independently of renderer rotation. The boundary stays an overlay
+        # in figures; the halo is what guarantees the clip never cuts data
+        # inside the field (the old bug was masking at ZERO buffer).
         clipped_array = _mask_array_to_geometry(
-            mosaic_array,
-            mosaic_transform,
-            buffered_source,
-            resolved_nodata,
-        )
+            mosaic_array, mosaic_transform, _buffered_source, resolved_nodata)
 
         destination_array, destination_transform = _reproject_array(
             clipped_array,
@@ -254,12 +258,9 @@ def clip_dem_tiles_to_buffer(
             resolved_nodata,
             resampling,
         )
-        destination_array = _mask_array_to_geometry(
-            destination_array,
-            destination_transform,
-            analysis.buffered_geometry_analysis,
-            resolved_nodata,
-        )
+        # (second polygon mask, post-reproject, removed 2026-11-05: it
+        # re-imposed the buffered-circle cut on the analysis-CRS output —
+        # same overlay-not-cut-line policy as the pre-reproject mask.)
 
         warnings = list(analysis.warnings)
         warning = vertical_datum_warning(source_vertical_datum, target_vertical_datum)
@@ -325,7 +326,15 @@ def write_raster_atomic(
             temp_path = Path(temp_file.name)
         with rasterio.open(temp_path, "w", **profile) as dst:
             dst.write(array)
-            if tags:
+        if tags:
+            # COG finalize rebuilds the dataset body at close: tags applied
+            # while the writer is open are dropped. Re-tag the finalized file
+            # (any driver) before the atomic replace so provenance and
+            # synthetic-fixture markers always survive. Metadata-only r+ on a
+            # COG needs GDAL's documented opt-in; the layout stays intact.
+            with rasterio.open(
+                temp_path, "r+", IGNORE_COG_LAYOUT_BREAK="YES"
+            ) as dst:
                 dst.update_tags(**tags)
         os.replace(temp_path, output)
     except Exception:
@@ -399,12 +408,21 @@ def _geometry_to_crs(geometry: BaseGeometry, src_crs: str | CRS, dst_crs: str | 
 
 
 def _resolve_nodata(datasets: Sequence[Any], override: float | int | None) -> float | int:
-    if override is not None:
-        return override
-    for dataset in datasets:
-        if dataset.nodata is not None:
-            return dataset.nodata
-    return DEFAULT_NODATA
+    value: float | int | None = override
+    if value is None:
+        value = next((d.nodata for d in datasets if d.nodata is not None),
+                     DEFAULT_NODATA)
+    # Integer rasters need an integer nodata sentinel: numpy>=2.5 refuses the
+    # float(-32768.0) -> int16 fill rasterio.merge performs for NASADEM/HGT
+    # sources (TypeError: Cannot convert fill_value nan to dtype int16).
+    kind = np.dtype(datasets[0].dtypes[0]).kind if datasets and datasets[0].dtypes else "f"
+    if kind in "iu":
+        # NASADEM/HGT COGs can expose no nodata metadata -> DEFAULT_NODATA
+        # (nan) would crash rasterio.merge's int16 fill under numpy>=2.5.
+        dtype = np.dtype(datasets[0].dtypes[0])
+        if isinstance(value, float) and (not np.isfinite(value) or float(value).is_integer()):
+            return int(value) if np.isfinite(value) else int(np.iinfo(dtype).min)
+    return value
 
 
 def _compatible_dtype(dtype_name: str, nodata: float | int) -> str:
@@ -491,7 +509,6 @@ def _output_profile(
     profile = source_profile.copy()
     profile.update(
         {
-            "driver": "GTiff",
             "height": int(array.shape[1]),
             "width": int(array.shape[2]),
             "count": int(array.shape[0]),
@@ -500,14 +517,20 @@ def _output_profile(
             "transform": transform,
             "nodata": nodata,
             "compress": compress,
-            "tiled": True,
-            "blockxsize": 16,
-            "blockysize": 16,
-            "interleave": "band",
         }
     )
     if compress.lower() in {"deflate", "lzw"} and np.issubdtype(np.dtype(dtype), np.floating):
         profile["predictor"] = 3
+    # Real COG (was tiled-GTiff with 16px blocks and no overviews): stored
+    # field DEM clips must be range-readable by browser GIS clients without
+    # an export step; the container stays GeoTIFF so rasterio consumers are
+    # unaffected. Layout keys (tiled/blockxsize/blockysize/interleave) must
+    # go — the COG driver derives its own layout.
+    for key in ("tiled", "blockxsize", "blockysize", "interleave"):
+        profile.pop(key, None)
+    profile["driver"] = "COG"
+    profile["overview_resampling"] = "average"
+    profile["sparse_ok"] = True
     return profile
 
 

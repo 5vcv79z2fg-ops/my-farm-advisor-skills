@@ -10,6 +10,10 @@ Only these skill roots are in scope unless the task explicitly adds a new skill:
 
 - `my-farm-advisor/`: umbrella farm advisory, farm data pipelines, field management, imagery, soil, weather, EDA, strategy, and admin maps.
 - `my-farm-breeding-trial-management/`: breeding operations, trial design, fieldbooks, germplasm, selection, crossing, and field trial placement.
+
+Maturity: `my-farm-advisor` and its data pipeline are the active build focus — the data foundation
+everything else stands on. The breeding and QTL skills are initial stabs (real, runnable examples,
+fewer than coming) and will expand against that foundation.
 - `my-farm-qtl-analysis/`: QTL and GWAS analysis, QC, population structure, genomic prediction, and reporting.
 
 ## Dependency boundary
@@ -41,6 +45,15 @@ Run from the repository root:
 
 Treat validation failure as a blocker unless the task is only drafting docs and explicitly says not to run commands. The validator checks required `SKILL.md` and `README.md` files, provenance records, forbidden paths, and asset policy compliance.
 
+## Release boundary — consumers inherit the artifact, never this repo's project law (2026-11-14)
+
+This repo's history is its own: project-specific rules (for example, the G2F challenge's
+external-data cutoff and its backfill history) are first-class law HERE and stay first-class.
+When cutting a tag or writing its release note, **a rationale citing another project's event
+must carry its scope clause at the source** — consuming repos grep their law faces and
+nothing else, and vendored bytes are exempt by design: a sentence whose rationale does not
+travel should not be written as if it did.
+
 ## Contribution default
 
 Branch work should create a new skill unless the user explicitly asks to add, extend, or modify an existing skill.
@@ -63,3 +76,21 @@ Subtree docs should be loaded on demand. Avoid making `SKILL.md` a full manual.
 Keep `SKILL.md` short, accurate, and route-focused. Use it to answer when to invoke the skill, where to start, and which local index, guide, AGENTS file, or example family to open next.
 
 Do not duplicate every example or long workflow in `SKILL.md` when a local `README.md`, `INDEX.md`, `GUIDE.md`, or `AGENTS.md` already covers it. Preserve frontmatter names and metadata unless the task explicitly changes skill identity. Prefer focused references and guides that agents load only when needed.
+
+## Figure quality gate (agents too, not just humans)
+
+Every figure that appears in a README, gallery (`examples/**/output/`), or
+demo writeup — new *or regenerated* — passes the five-point vision review in
+`CONTRIBUTING.md` **before** it is committed: no empty/under-covered panels,
+field-map frame contract (local-metre axes, auto-rotation, north arrow +
+on every footprint incl. unrotated circles; distance from metre axes, no scale bar), halo clip
+respected (polygon buffer + max(10 % of max length, 1 cell); viewport 15 %; basemap under), colorbar semantics matching continuous vs categorical,
+legible labels at README size. Concretely:
+
+- After running any rendering script that writes gallery figures, open each
+  written PNG with vision and check it against the list; fix or drop, never
+  commit "as-is for now".
+- A change to a shared renderer (`lib/field_frame.py`, `lib/raster_rules.py`,
+  any `render_*.py`/`generate_*.py` feeding the gallery) re-triggers review
+  of **every** figure that renderer draws.
+- Record the review verdict in the commit message.
