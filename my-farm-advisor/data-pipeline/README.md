@@ -302,6 +302,79 @@ export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
 
 The `environment.d` file applies to future sessions only. It does not update an already-running shell.
 
+## Australian branch (`src/scripts/au/`)
+
+The US step list is SSURGO/CDL/corn-soy shaped, so the AU stages live beside it
+in `src/scripts/au/` and read the same canonical runtime tree. They source
+SLGA/ASF soil property grids (five slabs to 100 cm), Copernicus GLO-30 terrain,
+Sentinel-2 L2A, SILO weather and the grower's own crop records — never
+WorldCereal, and never NASA POWER.
+
+`au/run_au_pipeline.py` is the entrypoint. It runs the per-farm stages in input
+order, then the zone-level stages:
+
+| stage | script | output |
+| --- | --- | --- |
+| `soil-ingest` | `ingest_au_soil.py` | per-field 0–100 cm rasters, 0–30 cm blends, profile tables |
+| `ndvi` | `build_au_ndvi.py` | monthly stats, per-field-year summary, NDVI rasters |
+| `cards` | `render_au_ndvi_cards.py` | one NDVI card per paddock |
+| `soil-maps` | `render_au_soil_maps.py` | one 0–30 cm soil-property sheet per paddock |
+| `field-posters` | `render_au_field_posters.py` | one field poster per paddock |
+| `texture` | `render_au_texture_triangles.py` | one texture sheet per farm |
+| `soil-cards` | `render_au_soil_cards.py` | one 0–100 cm profile card per paddock |
+| `zone-posters` | `render_au_zone_posters.py` | one farm-row × year-column poster per zone |
+| `zone-reports` | `build_au_zone_reports.py` | Markdown + self-contained HTML per zone |
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=/absolute/path/to/my-farm-advisor-runtime
+cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/au/run_au_pipeline.py \
+  --grower-slug au-grain-grower \
+  --farms kanoona,caroleese,tullokan,brentwood,woodlands,rio \
+  [--only ndvi,cards] [--with-soil-ingest] [--skip-zone-stages] [--force]
+```
+
+Growing seasons are per farm: Kanoona 1 Apr – 30 Nov, the Temora and lease
+blocks 1 Apr – 15 Nov (`lib/au_common.py:SEASON_WINDOW`). One climate source
+per report, SILO only.
+
+**Cloud and scene choice.** The STAC search gate is `eo:cloud_cover < 70 %`,
+but that figure describes a 110 × 110 km tile, so it only decides what is worth
+downloading. Each downloaded candidate is then measured against the exact
+paddock polygon, and the month uses the candidate with the highest measured
+`valid_fraction`, provided it clears `MIN_VALID_FRACTION = 0.50`; otherwise the
+month is reported as a gap. `AG_SCENES_PER_MONTH` (default 2 in AU runs) caps
+candidates per month and counts **distinct acquisition dates** — two processing
+baselines of the same pass are one chance to see the paddock, not two, so the
+manifest records `month_candidate_availability` and later runs top the year up
+with dates that were never fetched instead of re-downloading what is on disk.
+
+**Honest gaps.** A year with no crop record is `not_managed`; a month with no
+scene passing the visibility gate is `no usable scene`. Both are printed as
+text, never left as `nan` and never interpolated. Carbon stock is a slab-by-slab
+sum (`t C/ha`), not the product of depth-weighted means.
+
+**Zones.** Three management zones group the six farms
+(`lib/au_common.py:ZONE_BY_FARM`): Kanoona; Caroleese + Tullokan/Dalkeith;
+and the lease country (Brentwood, Woodlands, Rio). Each zone gets one poster
+laid out as **rows = farms, columns = years**. Rows are farms because a zone is
+not always one block of land — the lease country spans 25 km between
+Brentwood/Rio and Woodlands, so a single shared frame would leave most of every
+panel as empty basemap. Each row is framed to its own farm (the frame is
+constant along the row, so the years compare) while one colour scale is fixed
+across every panel of all three posters (so the rows and zones compare).
+
+Counting is managed-only, because a `not_managed` field-year carries a
+contextual NDVI that must never enter a statistic: the colour scale is derived
+from painted values alone (an absent year is hatched grey, not coloured), each
+panel prints how many paddocks were managed and how many paddock-months were
+observed over those managed paddocks, and the five-year ranking counts managed
+seasons only, printing e.g. `(3/5)` rather than five. The zone reports apply
+the same rule: absent years are excluded from the season table, the zone means,
+the per-year columns and the "Seasons" count, and the paddock table prints
+`not managed` in that cell instead of an NDVI.
+
 ## Running inside an agent CLI
 
 When invoking the pipeline from an agent harness CLI (OpenClaw, Hermes, or plain shell), you can still
