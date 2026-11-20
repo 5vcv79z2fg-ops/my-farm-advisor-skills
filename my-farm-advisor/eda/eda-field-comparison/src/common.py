@@ -1,0 +1,246 @@
+"""Shared helpers for the Australian paddock field-year panel.
+
+The panel is built from five annual ESRI shapefiles exported from the
+grower's management system. Geometry is never modified apart from
+reprojection; retired sub-paddocks are mapped onto their surviving parent
+field so that field identity is stable across the 2024 -> 2025 boundary
+revision.
+"""
+
+from __future__ import annotations
+
+import math
+import os
+import re
+import warnings
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import shapefile
+from pyproj import Transformer
+from shapely import make_valid
+from shapely.geometry import MultiPolygon, Polygon, shape
+from shapely.ops import transform, unary_union
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+YEARS = (2022, 2023, 2024, 2025, 2026)
+
+SOURCE_CRS = "EPSG:4326"
+TARGET_CRS = "EPSG:3577"
+
+_TO_TARGET = Transformer.from_crs(SOURCE_CRS, TARGET_CRS, always_xy=True).transform
+
+def _runtime_root() -> Path:
+    """Locate the untracked runtime tree that holds the raw paddock layers.
+
+    Precedence follows the repository convention: an explicit override first,
+    then the shared ``DATA_PIPELINE_DATA_ROOT``, then a home-relative default.
+    Raw layers never live inside the repository.
+    """
+    explicit = os.environ.get("AU_PADDOCKS_RUNTIME", "").strip()
+    if explicit:
+        return Path(explicit)
+    shared = os.environ.get("DATA_PIPELINE_DATA_ROOT", "").strip()
+    if shared:
+        return Path(shared) / "au-paddocks"
+    return Path.home() / "my-farm-advisor-runtime" / "au-paddocks"
+
+
+RUNTIME_ROOT = _runtime_root()
+
+# Two boundary schemas: A covers 2022-2024 and B covers 2025-2026.
+SCHEMA_BY_YEAR = {2022: "A", 2023: "A", 2024: "A", 2025: "B", 2026: "B"}
+
+# Retired pre-2025 sub-paddocks and the surviving field that absorbed them.
+RETIRED_TO_PARENT: dict[int, int] = {
+    1169914: 1153771,  # Copperbella Creek -> Copperbella
+    1153773: 1153777,  # Hayshed          -> Lane Lucerne
+    1169687: 1153779,  # House            -> Oat Paddock
+}
+
+# Field was absent from the year's shapefile but the grower confirmed its use.
+# geometry_source names the year whose polygon is reused (verified identical).
+CONFIRMED_RECORDS: dict[tuple[int, int], dict] = {
+    (1153780, 2025): {
+        "crop": "Pasture",
+        "variety": "Annual Pasture",
+        "geometry_source": 2024,
+        "crop_source": "grower_confirmed",
+    },
+    (1153780, 2026): {
+        "crop": "Pasture",
+        "variety": "Annual Pasture",
+        "geometry_source": 2026,
+        "crop_source": "grower_confirmed",
+    },
+}
+
+REGION_BY_FARM: dict[str, str] = {
+    "Kanoona": "Kanoona",
+    "Caroleese": "Caroleese–Tullokan",
+    "Tullokan / Dalkeith": "Caroleese–Tullokan",
+    "Brentwood (lease)": "Lease country",
+    "Woodlands (lease)": "Lease country",
+    "Rio (lease)": "Lease country",
+}
+
+REGIONS = ("Kanoona", "Caroleese–Tullokan", "Lease country")
+
+CROP_GROUP: dict[str, str] = {
+    "Wheat": "Cereal",
+    "Barley": "Cereal",
+    "Canola": "Oilseed",
+    "Narrow Leaf Lupin": "Legume",
+    "Field Peas": "Legume",
+    "Faba/Broad/Field Bean": "Legume",
+    "Pasture": "Pasture",
+}
+
+# Paddock is permanent pasture for all five years, so it cannot rotate.
+PERMANENT_PASTURE = {1153780}
+
+_SHORT_CROP = {
+    "Narrow Leaf Lupin": "Lupin",
+    "Faba/Broad/Field Bean": "Faba",
+}
+
+
+def short_crop(crop: str) -> str:
+    return _SHORT_CROP.get(crop, crop)
+
+
+def parse_area(raw: object) -> float:
+    """Turn an area attribute such as '65.38 ha' into a float."""
+    if raw is None:
+        return float("nan")
+    text = str(raw).strip()
+    if not text:
+        return float("nan")
+    cleaned = re.sub(r"[^0-9.\-]", "", text)
+    if cleaned in ("", ".", "-"):
+        return float("nan")
+    return float(cleaned)
+
+
+def _clean(text: object) -> str:
+    if text is None:
+        return ""
+    return str(text).strip()
+
+
+@dataclass
+class FieldRecord:
+    """One paddock polygon as it appears in a single annual shapefile."""
+
+    paddock_id: int
+    name: str
+    farm: str
+    crop: str
+    variety: str
+    area_reported: float
+    year: int
+    geom: Polygon | MultiPolygon
+    parts: int
+    vertices: int
+    valid: bool = field(default=True)
+
+    @property
+    def area_geom(self) -> float:
+        return self.geom.area / 10_000.0
+
+
+def layer_path(year: int) -> Path:
+    return RUNTIME_ROOT / str(year) / "au-paddocks.shp"
+
+
+def load_year(year: int) -> dict[int, FieldRecord]:
+    """Read one annual shapefile, keyed by paddock id, in EPSG:3577."""
+    reader = shapefile.Reader(str(layer_path(year)))
+    out: dict[int, FieldRecord] = {}
+    for shp, rec in zip(reader.shapes(), reader.records()):
+        row = rec.as_dict()
+        raw = make_valid(shape(shp.__geo_interface__))
+        geom = transform(_TO_TARGET, raw)
+        pid = int(row["paddock_id"])
+        out[pid] = FieldRecord(
+            paddock_id=pid,
+            name=_clean(row["paddock_na"]),
+            farm=_clean(row["property_n"]),
+            crop=_clean(row["crop_name"]),
+            variety=_clean(row["variety_na"]),
+            area_reported=parse_area(row["area"]),
+            year=year,
+            geom=geom,
+            parts=len(shp.parts),
+            vertices=len(shp.points),
+            valid=bool(geom.is_valid),
+        )
+    return out
+
+
+def load_all() -> dict[int, dict[int, FieldRecord]]:
+    return {year: load_year(year) for year in YEARS}
+
+
+def canonical_ids(layers: dict[int, dict[int, FieldRecord]]) -> list[int]:
+    """Surviving field identities: the 2025 set plus the 2026-only paddock."""
+    ids = set(layers[2025]) | set(layers[2026])
+    for retired in RETIRED_TO_PARENT:
+        ids.discard(retired)
+    return sorted(ids)
+
+
+def canonical_meta(
+    layers: dict[int, dict[int, FieldRecord]],
+) -> dict[int, dict[str, str]]:
+    """Name and farm for each canonical field, preferring the newest record."""
+    meta: dict[int, dict[str, str]] = {}
+    for cid in canonical_ids(layers):
+        for year in (2025, 2026, 2024, 2023, 2022):
+            if cid in layers[year]:
+                rec = layers[year][cid]
+                meta[cid] = {"name": rec.name, "farm": rec.farm}
+                break
+    return meta
+
+
+def components_for(
+    cid: int, layer: dict[int, FieldRecord]
+) -> list[FieldRecord]:
+    """Records in one year that belong to a canonical field."""
+    out = []
+    if cid in layer:
+        out.append(layer[cid])
+    for retired, parent in RETIRED_TO_PARENT.items():
+        if parent == cid and retired in layer:
+            out.append(layer[retired])
+    return out
+
+
+def geometry_for(
+    cid: int, layers: dict[int, dict[int, FieldRecord]]
+) -> tuple[Polygon | MultiPolygon, int] | tuple[None, None]:
+    """Canonical polygon and the year it was taken from."""
+    for year in (2025, 2026, 2024, 2023, 2022):
+        comps = components_for(cid, layers[year])
+        if comps:
+            geom = comps[0].geom if len(comps) == 1 else unary_union(
+                [c.geom for c in comps]
+            )
+            return geom, year
+    return None, None
+
+
+def shannon(proportions: list[float]) -> float:
+    """Shannon diversity index over positive proportions (natural log)."""
+    total = sum(proportions)
+    if total <= 0:
+        return 0.0
+    h = 0.0
+    for value in proportions:
+        if value <= 0:
+            continue
+        p = value / total
+        h -= p * math.log(p)
+    return h
