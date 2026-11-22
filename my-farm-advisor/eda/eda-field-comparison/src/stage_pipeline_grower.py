@@ -29,6 +29,8 @@ from pathlib import Path
 
 import geopandas as gpd
 
+from common import REGION_BY_FARM
+
 HERE = Path(__file__).resolve().parent
 GROWER_SLUG = "au-grain-grower"
 COUNTRY = "AUS"  # GADM ISO3; the county echo matches on this, not ISO-2.
@@ -40,15 +42,6 @@ FARM_SLUG = {
     "Rio (lease)": "rio",
     "Tullokan / Dalkeith": "tullokan",
     "Woodlands (lease)": "woodlands",
-}
-
-REGION_BY_FARM = {
-    "Kanoona": "Kanoona",
-    "Caroleese": "Caroleese–Tullokan",
-    "Tullokan / Dalkeith": "Caroleese–Tullokan",
-    "Brentwood (lease)": "Lease country",
-    "Woodlands (lease)": "Lease country",
-    "Rio (lease)": "Lease country",
 }
 
 

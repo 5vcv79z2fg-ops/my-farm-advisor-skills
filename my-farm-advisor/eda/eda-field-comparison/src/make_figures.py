@@ -37,8 +37,8 @@ EXAMPLES = BASE / "examples"
 FIG_DIR = EXAMPLES / "figures"
 
 REGION_COLOUR = {
-    "Kanoona": "#2e6f40",
-    "Caroleese–Tullokan": "#b5651d",
+    "Harden": "#2e6f40",
+    "Trungley Hall": "#b5651d",
     "Lease country": "#2f5d8a",
 }
 
@@ -407,8 +407,8 @@ def figure_map(panel: pd.DataFrame) -> Path:
     ax_over.set_ylabel("Northing (km, EPSG:3577)", fontsize=7)
 
     region_axes = {
-        "Kanoona": fig.add_subplot(gs[0, 1]),
-        "Caroleese–Tullokan": fig.add_subplot(gs[1, 0]),
+        "Harden": fig.add_subplot(gs[0, 1]),
+        "Trungley Hall": fig.add_subplot(gs[1, 0]),
         "Lease country": fig.add_subplot(gs[1, 1]),
     }
     for region, ax in region_axes.items():

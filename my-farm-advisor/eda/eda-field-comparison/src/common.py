@@ -77,15 +77,15 @@ CONFIRMED_RECORDS: dict[tuple[int, int], dict] = {
 }
 
 REGION_BY_FARM: dict[str, str] = {
-    "Kanoona": "Kanoona",
-    "Caroleese": "Caroleese–Tullokan",
-    "Tullokan / Dalkeith": "Caroleese–Tullokan",
+    "Kanoona": "Harden",
+    "Caroleese": "Trungley Hall",
+    "Tullokan / Dalkeith": "Trungley Hall",
     "Brentwood (lease)": "Lease country",
     "Woodlands (lease)": "Lease country",
     "Rio (lease)": "Lease country",
 }
 
-REGIONS = ("Kanoona", "Caroleese–Tullokan", "Lease country")
+REGIONS = ("Harden", "Trungley Hall", "Lease country")
 
 CROP_GROUP: dict[str, str] = {
     "Wheat": "Cereal",
