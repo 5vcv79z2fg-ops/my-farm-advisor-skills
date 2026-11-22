@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from matplotlib.colors import Normalize  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
 
 _SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 _AU_DIR = Path(__file__).resolve().parent
@@ -41,9 +42,11 @@ import render_au_soil_maps as _soilmaps  # noqa: E402
 from field_frame import crs_note, decorate, frame_for  # noqa: E402
 from lib.au_common import (  # noqa: E402
     FARM_NAME_BY_SLUG,
+    county_label,
+    growing_season,
     load_field_names,
+    region_for_farm,
     season_months,
-    season_window,
 )
 from lib.paths import (  # noqa: E402
     farm_dir,
@@ -55,6 +58,35 @@ MONTH_LABELS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 YEAR_COLORS = ("#1d4ed8", "#0f766e", "#b45309", "#7c3aed", "#be123c", "#0369a1")
 OFFLINE = os.environ.get("AG_OFFLINE") == "1"
+
+
+def _fit_title(ax, head: str, tail: str, size: float, min_size: float = 7.6) -> None:
+    """Draw a left-aligned panel title that always fits its axes width.
+
+    A character count cannot predict this: a soil panel is as wide as the
+    paddock is, so the same title fits on a square block and ran off the page on
+    a narrow one. Try one line, then wrap the observed range onto a second line,
+    and only then shrink - a wrapped 9 pt title reads better than a 6 pt one.
+    Options go up, above the map, so nothing is covered.
+    """
+    fig = ax.figure
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+    available = ax.get_window_extent(renderer=renderer).width
+
+    candidates = [f"{head}   {tail}", f"{head}\n{tail}"] if tail else [head]
+    title = None
+    for text in candidates:
+        title = ax.set_title(text, fontsize=size, pad=5, loc="left")
+        fig.canvas.draw()
+        drawn = title.get_window_extent(renderer=renderer).width
+        if drawn <= available or not tail:
+            break
+    if title is None:
+        return
+    drawn = title.get_window_extent(renderer=renderer).width
+    if drawn > available and drawn > 0:
+        title.set_fontsize(max(min_size, size * available / drawn))
 
 
 def _soil_panel(ax, ff, path: Path, *, code: str, label: str, unit: str,
@@ -83,16 +115,11 @@ def _soil_panel(ax, ff, path: Path, *, code: str, label: str, unit: str,
     mean_v = float(np.nanmean(inside)) if inside.size else float("nan")
     # The observed spread travels with the mean: a flat panel is a uniform
     # paddock, and the numbers prove it instead of leaving the reader guessing
-    # whether the colour scale is broken.
-    if inside.size:
-        title = (f"{label}   mean {mean_v:.2f} {unit} "
-                 f"({inside.min():.2f}–{inside.max():.2f})")
-    else:
-        title = f"{label}   mean {mean_v:.2f} {unit}".strip()
-    # With the range appended the pH title reaches the page edge at the normal
-    # size; step down rather than clip the last digits on a wider number.
-    size = fontsize if len(title) <= 46 else fontsize - 1.3
-    ax.set_title(title, fontsize=size, pad=5, loc="left")
+    # whether the colour scale is broken. It lives on its own line when the
+    # panel is narrower than the sentence.
+    head = f"{label}   mean {mean_v:.2f} {unit}"
+    tail = (f"({inside.min():.2f}–{inside.max():.2f})" if inside.size else "")
+    _fit_title(ax, head, tail, fontsize)
     cb = ax.figure.colorbar(im, ax=ax, orientation="horizontal", fraction=0.05,
                             pad=0.12, aspect=26,
                             **({"ticks": ticks} if ticks else {}))
@@ -141,7 +168,6 @@ def render_poster(
     slug: str,
     name: str,
     out_png: Path,
-    region: str = "",
     area_ha: float | None = None,
     county: str = "",
 ) -> Path | None:
@@ -160,9 +186,15 @@ def render_poster(
     ff = frame_for(boundary, panel_h_in=3.0, panel_w_in=3.0)
 
     months = season_months(farm)
-    start_md, end_md = season_window(farm)
     years = sorted({int(y["year"]) for y in summary["years"]})
     meta = {int(y["year"]): y for y in summary["years"]}
+    # A year the land was not under this management has no season to show: its
+    # NDVI is context, not production, and painting it would read as a crop we
+    # ran. The row stays so the five-year grid keeps its meaning.
+    absent = {
+        year for year in years
+        if str(meta[year].get("status") or "") == "not_managed"
+    }
     pivot = monthly.pivot_table(index="year", columns="month", values="ndvi_median")
     masked = monthly.pivot_table(index="year", columns="month", values="valid_fraction",
                                  aggfunc="first")
@@ -179,17 +211,20 @@ def render_poster(
     ax_head.axis("off")
     ax_head.text(0.0, 0.92, name, fontsize=25, fontweight="bold", color="#0b1220",
                  transform=ax_head.transAxes)
-    sub = (
-        f"{FARM_NAME_BY_SLUG.get(farm, farm)}"
-        f"{' · ' + region if region else ''}"
-        f"{' · ' + county if county else ''}"
-        f"{f' · {area_ha:.1f} ha' if area_ha else ''}"
+    sub = " · ".join(
+        part for part in (
+            FARM_NAME_BY_SLUG.get(farm, farm),
+            region_for_farm(FARM_NAME_BY_SLUG.get(farm, farm)),
+            county_label(county),
+            f"{area_ha:.1f} ha" if area_ha else "",
+        ) if part
     )
     ax_head.text(0.0, 0.66, sub, fontsize=11.6, color="#3f3f46",
                  transform=ax_head.transAxes)
     ax_head.text(
         0.0, 0.40,
-        f"Seasons {years[0]}–{years[-1]}   |   window {start_md} → {end_md}   |   "
+        f"Seasons {years[0]}–{years[-1]}   |   Growing season "
+        f"{growing_season(farm)}   |   "
         f"Sentinel-2 L2A 10 m + SLGA/ASF soil   |   Copernicus GLO-30 terrain",
         fontsize=9.6, color="#52525b", transform=ax_head.transAxes,
     )
@@ -227,6 +262,8 @@ def render_poster(
     cax = fig.add_subplot(grid_ax[0, 1])
     grid = np.full((len(years), len(months)), np.nan)
     for i, year in enumerate(years):
+        if year in absent:
+            continue
         for j, month in enumerate(months):
             if year in pivot.index and month in pivot.columns:
                 value = pivot.loc[year, month]
@@ -235,6 +272,15 @@ def render_poster(
     norm = Normalize(0.0, 0.9)
     im = ax_g.imshow(grid, cmap="RdYlGn", norm=norm, aspect="auto")
     for i, year in enumerate(years):
+        if year in absent:
+            for j, _month in enumerate(months):
+                ax_g.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0,
+                                         facecolor="#ececee", edgecolor="#a1a1aa",
+                                         hatch="///", linewidth=0.5, zorder=3))
+            ax_g.text((len(months) - 1) / 2, i, "not managed", ha="center",
+                      va="center", fontsize=8.4, color="#3f3f46", style="italic",
+                      zorder=4)
+            continue
         for j, _month in enumerate(months):
             value = grid[i, j]
             if np.isfinite(value):
@@ -256,6 +302,8 @@ def render_poster(
     lower = outer[3].subgridspec(1, 2, width_ratios=[1.35, 1.0], wspace=0.24)
     ax_c = fig.add_subplot(lower[0, 0])
     for i, year in enumerate(years):
+        if year in absent:
+            continue
         series = pivot.loc[year].reindex(months) if year in pivot.index else pd.Series(
             index=months, dtype="float64"
         )
@@ -270,13 +318,20 @@ def render_poster(
     ax_c.set_ylabel("NDVI (median)", fontsize=8.6)
     ax_c.tick_params(labelsize=8)
     ax_c.grid(alpha=0.18, lw=0.6)
-    ax_c.legend(fontsize=8, ncol=len(years), frameon=False, loc="upper left")
+    plotted = len(years) - len(absent)
+    if plotted:
+        ax_c.legend(fontsize=8, ncol=min(plotted, len(years)), frameon=False,
+                    loc="upper left")
     ax_c.set_title("Season curves", fontsize=10.4, loc="left", pad=6, fontweight="bold")
     for s in ("top", "right"):
         ax_c.spines[s].set_visible(False)
 
     ax_i = fig.add_subplot(lower[0, 1])
-    integrals = [meta[y].get("season_integral_ndvi_months") or np.nan for y in years]
+    integrals = [
+        np.nan if year in absent else (meta[year].get("season_integral_ndvi_months")
+                                       or np.nan)
+        for year in years
+    ]
     bars = ax_i.bar(range(len(years)), integrals, width=0.6,
                     color=[YEAR_COLORS[i % len(YEAR_COLORS)] for i in range(len(years))],
                     alpha=0.86)
@@ -289,8 +344,15 @@ def render_poster(
         label = f"{height:.1f}" + (f"\n{observed}/{expected} mo" if observed < expected else "")
         ax_i.text(bar.get_x() + bar.get_width() / 2, height + 0.06, label,
                   ha="center", va="bottom", fontsize=7.6, color="#27272a")
+    for index, year in enumerate(years):
+        if year in absent:
+            ax_i.text(index, 0.04, "not\nmanaged", ha="center", va="bottom",
+                      fontsize=7.4, color="#52525b", style="italic")
     ax_i.set_xticks(range(len(years)))
     ax_i.set_xticklabels([str(y) for y in years], fontsize=8)
+    # Pin the year slots: an absent year contributes no bar, so autoscaling
+    # would drop its slot and push the "not managed" note outside the axes.
+    ax_i.set_xlim(-0.55, len(years) - 0.45)
     ax_i.set_ylabel("NDVI-months", fontsize=8.6)
     ax_i.tick_params(labelsize=8)
     ax_i.grid(axis="y", alpha=0.18, lw=0.6)
@@ -316,6 +378,8 @@ def render_poster(
     note_lines = [
         "Grey NDVI cells are months without a scene passing the paddock-visibility "
         "gate; they are reported, never filled.",
+        "A hatched year was not managed: no crop, no NDVI, no integral — only the "
+        "land's static attributes are shown.",
         crs_note(ff, full=bool(ff.rotated)),
     ]
     note = "\n".join(
@@ -356,7 +420,6 @@ def main(argv=None) -> int:
         written = render_poster(
             grower=args.grower_slug, farm=args.farm_slug, slug=str(row.field_slug),
             name=str(row.paddock_name), out_png=out,
-            region=str(getattr(row, "region", "") or ""),
         )
         print(written or f"skip  {row.field_slug} (no NDVI tables)")
     return 0

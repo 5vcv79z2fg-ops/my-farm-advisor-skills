@@ -19,18 +19,38 @@ import pandas as pd
 from lib.paths import DATA_ROOT, farm_boundary_path, farm_dir, field_dir
 
 ZONE_BY_FARM = {
-    "Kanoona": "Kanoona",
-    "Caroleese": "Caroleese-Tullokan",
-    "Tullokan / Dalkeith": "Caroleese-Tullokan",
+    "Kanoona": "Harden",
+    "Caroleese": "Trungley-Hall",
+    "Tullokan / Dalkeith": "Trungley-Hall",
     "Brentwood (lease)": "Lease-country",
     "Woodlands (lease)": "Lease-country",
     "Rio (lease)": "Lease-country",
 }
 
+# The zone's name as a reader meets it. ``ZONE_REGION`` is the same name
+# without the farm list, and is what the ``region`` column in
+# ``manifests/field-names.csv`` carries - derived here rather than maintained
+# beside the zone mapping, so a rename cannot leave a stale region behind.
+ZONE_REGION = {
+    "Harden": "Harden",
+    "Trungley-Hall": "Trungley Hall",
+    "Lease-country": "Lease country",
+}
+
 ZONE_LABELS = {
-    "Kanoona": "Kanoona",
-    "Caroleese-Tullokan": "Caroleese / Tullokan-Dalkeith",
+    "Harden": "Harden",
+    "Trungley-Hall": "Trungley Hall",
     "Lease-country": "Lease country (Brentwood, Woodlands, Rio)",
+}
+
+# GADM AUS level-2 calls these "areas"; in New South Wales they are shires.
+# Only the printed name is translated - the stored boundary attribute keeps
+# what the source delivered, so re-clipping a farm is never needed to fix a
+# label.
+COUNTY_LABELS = {
+    "Harden (Area)": "Hilltops Shire",
+    "Bland (Area)": "Bland Shire",
+    "Temora (Area)": "Temora Shire",
 }
 
 FARM_ORDER = ("kanoona", "caroleese", "tullokan", "brentwood", "woodlands", "rio")
@@ -60,6 +80,25 @@ def season_window(farm_slug: str) -> tuple[str, str]:
 def season_months(farm_slug: str) -> tuple[int, ...]:
     start, end = season_window(farm_slug)
     return tuple(range(int(start.split("-")[0]), int(end.split("-")[0]) + 1))
+
+
+MONTH_ABBREVIATIONS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def growing_season(farm_slug: str) -> str:
+    """The season as a reader meets it: ``01 Apr – 30 Nov``.
+
+    One formatter for the poster, the NDVI card and the zone reports, so the
+    same farm cannot advertise two different seasons.
+    """
+    start, end = season_window(farm_slug)
+
+    def _day_month(md: str) -> str:
+        month, day = md.split("-")
+        return f"{int(day):02d} {MONTH_ABBREVIATIONS[int(month) - 1]}"
+
+    return f"{_day_month(start)} – {_day_month(end)}"
 
 SOIL_PROPERTIES = (
     "CLAY",
@@ -198,6 +237,24 @@ def zone_for_farm(farm_name: str) -> str:
         if key.split(" (")[0].lower() in farm_name.lower():
             return zone
     raise KeyError(f"no zone for farm {farm_name!r}")
+
+
+def region_for_farm(farm_name: str) -> str:
+    """The zone's display name, for the ``region`` column and subtitles."""
+    return ZONE_REGION[zone_for_farm(farm_name)]
+
+
+def county_label(raw: str) -> str:
+    """``Harden (Area)`` -> ``Hilltops Shire``; unknown names pass through."""
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    if text in COUNTY_LABELS:
+        return COUNTY_LABELS[text]
+    if text.endswith(" Shire"):
+        return text
+    stem = text.split(" (")[0].strip()
+    return f"{stem} Shire" if stem else ""
 
 
 def usda_texture(sand: float, clay: float) -> str:

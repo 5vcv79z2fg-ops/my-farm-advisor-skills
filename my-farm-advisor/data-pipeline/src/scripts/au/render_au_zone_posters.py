@@ -3,8 +3,8 @@
 
 Three zones, one sheet each:
 
-    Kanoona                   16 paddocks, one farm
-    Caroleese-Tullokan        11 paddocks, two farms
+    Harden                    16 paddocks, one farm
+    Trungley-Hall             11 paddocks, two farms
     Lease-country              6 paddocks, three farms
 
 The year grid is the point of the poster. Rotation here is per paddock, not
@@ -66,8 +66,8 @@ from lib.au_common import (  # noqa: E402
     FARM_NAME_BY_SLUG,
     FARM_ORDER,
     ZONE_LABELS,
+    growing_season,
     load_field_names,
-    season_window,
     zone_for_farm,
 )
 from lib.paths import (  # noqa: E402
@@ -76,7 +76,7 @@ from lib.paths import (  # noqa: E402
     farm_tables_dir,
 )
 
-ZONES = ("Kanoona", "Caroleese-Tullokan", "Lease-country")
+ZONES = ("Harden", "Trungley-Hall", "Lease-country")
 YEARS = (2022, 2023, 2024, 2025, 2026)
 OFFLINE = os.environ.get("AG_OFFLINE") == "1"
 GREY = "#d4d4d8"
@@ -188,7 +188,6 @@ def render_zone(
     farm_slugs = [s for s in FARM_ORDER if s in set(fields["farm_slug"].astype(str))]
     if not farm_slugs:
         farm_slugs = sorted(set(fields["farm_slug"].astype(str)))
-    start_md, end_md = season_window(farm_slugs[0])
     vmin, vmax = scale or _scale(summary["season_mean_ndvi"])
     norm = Normalize(vmin, vmax)
     cmap = plt.get_cmap("RdYlGn")
@@ -279,7 +278,7 @@ def render_zone(
     )
     ax_head.text(
         0.0, 0.26,
-        f"Season window {start_md} → {end_md} · Sentinel-2 L2A 10 m, "
+        f"Growing season {growing_season(farm_slugs[0])} · Sentinel-2 L2A 10 m, "
         f"one best cloud-screened scene per month · colour = mean of observed "
         f"monthly median NDVI, one fixed scale for all years and zones",
         fontsize=9.8, color="#52525b", transform=ax_head.transAxes,

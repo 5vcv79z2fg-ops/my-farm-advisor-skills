@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from matplotlib.colors import Normalize  # noqa: E402
+from matplotlib.patches import Rectangle  # noqa: E402
 
 _SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 for _p in (_SCRIPTS_ROOT, _SCRIPTS_ROOT / "lib"):
@@ -37,9 +38,10 @@ for _p in (_SCRIPTS_ROOT, _SCRIPTS_ROOT / "lib"):
         sys.path.insert(0, str(_p))
 
 from lib.au_common import (  # noqa: E402
+    FARM_NAME_BY_SLUG,
+    growing_season,
     load_field_names,
     season_months,
-    season_window,
 )
 from lib.paths import (  # noqa: E402
     farm_dir,
@@ -81,15 +83,19 @@ def render_card(
     slug: str,
     name: str,
     out_png: Path,
-    region: str = "",
 ) -> Path | None:
     monthly, summary = _load(grower, farm, slug)
     if monthly is None or not summary.get("years"):
         return None
     months = season_months(farm)
-    start_md, end_md = season_window(farm)
     years = sorted({int(y["year"]) for y in summary["years"]})
     years_meta = {int(y["year"]): y for y in summary["years"]}
+    # not managed: the year keeps its row (the grid must still read as five
+    # years) but carries no season, crop or NDVI.
+    absent = {
+        year for year in years
+        if str(years_meta[year].get("status") or "") == "not_managed"
+    }
 
     pivot = monthly.pivot_table(index="year", columns="month", values="ndvi_median")
     used = monthly.pivot_table(index="year", columns="month", values="used_in_season",
@@ -108,6 +114,8 @@ def render_card(
     cax_a = fig.add_subplot(inner_a[0, 1])
     grid = np.full((len(years), len(months)), np.nan)
     for i, year in enumerate(years):
+        if year in absent:
+            continue
         for j, month in enumerate(months):
             if year in pivot.index and month in pivot.columns:
                 value = pivot.loc[year, month]
@@ -116,6 +124,15 @@ def render_card(
     norm = Normalize(vmin=0.0, vmax=0.9)
     im = ax_a.imshow(grid, cmap="RdYlGn", norm=norm, aspect="auto")
     for i, year in enumerate(years):
+        if year in absent:
+            for j, _month in enumerate(months):
+                ax_a.add_patch(Rectangle((j - 0.5, i - 0.5), 1.0, 1.0,
+                                         facecolor="#ececee", edgecolor="#a1a1aa",
+                                         hatch="///", linewidth=0.5, zorder=3))
+            ax_a.text((len(months) - 1) / 2, i, "not managed", ha="center",
+                      va="center", fontsize=7.2, color="#3f3f46", style="italic",
+                      zorder=4)
+            continue
         for j, month in enumerate(months):
             value = grid[i, j]
             if np.isfinite(value):
@@ -147,6 +164,8 @@ def render_card(
     inner_b = outer[1].subgridspec(2, 1, height_ratios=[1.25, 1.0], hspace=0.42)
     ax_b = fig.add_subplot(inner_b[0])
     for i, year in enumerate(years):
+        if year in absent:
+            continue
         series = pivot.loc[year].reindex(months) if year in pivot.index else pd.Series(
             index=months, dtype="float64"
         )
@@ -165,8 +184,10 @@ def render_card(
     ax_b.set_ylabel("NDVI (median)", fontsize=7.6)
     ax_b.tick_params(labelsize=7)
     ax_b.grid(alpha=0.18, lw=0.6)
-    ax_b.legend(fontsize=7, ncol=len(years), frameon=False, loc="upper left",
-                handlelength=1.2, columnspacing=1.0)
+    plotted = len(years) - len(absent)
+    if plotted:
+        ax_b.legend(fontsize=7, ncol=min(plotted, len(years)), frameon=False,
+                    loc="upper left", handlelength=1.2, columnspacing=1.0)
     ax_b.set_title("Season curves — ring marks the peak month",
                    fontsize=9.4, loc="left", pad=6, fontweight="bold")
     for s in ("top", "right"):
@@ -174,7 +195,11 @@ def render_card(
 
     # ---------------------------------------------------------------- panel C
     ax_c = fig.add_subplot(inner_b[1])
-    integrals = [years_meta[y].get("season_integral_ndvi_months") or np.nan for y in years]
+    integrals = [
+        np.nan if y in absent else (years_meta[y].get("season_integral_ndvi_months")
+                                    or np.nan)
+        for y in years
+    ]
     bars = ax_c.bar(range(len(years)), integrals, width=0.62,
                     color=[YEAR_COLORS[i % len(YEAR_COLORS)] for i in range(len(years))],
                     alpha=0.85)
@@ -190,10 +215,21 @@ def render_card(
             label += f"\n{observed}/{expected} mo"
         ax_c.text(bar.get_x() + bar.get_width() / 2, height + 0.06, label,
                   ha="center", va="bottom", fontsize=6.8, color="#27272a")
+    for index, year in enumerate(years):
+        if year in absent:
+            ax_c.text(index, 0.04, "not\nmanaged", ha="center", va="bottom",
+                      fontsize=6.8, color="#52525b", style="italic")
     ax_c.set_xticks(range(len(years)))
+    # An absent year is already annotated inside the panel; repeating it on the
+    # tick label read as two different statements about the same year.
     ax_c.set_xticklabels(
-        [f"{y}\n{_crop_label(years_meta[y])}" for y in years], fontsize=7.6
+        [str(y) if y in absent else f"{y}\n{_crop_label(years_meta[y])}"
+         for y in years],
+        fontsize=7.6,
     )
+    # An absent year contributes no bar, so autoscaling would drop its slot and
+    # push the "not managed" note outside the axes.
+    ax_c.set_xlim(-0.55, len(years) - 0.45)
     ax_c.set_ylabel("NDVI-months", fontsize=7.6)
     ax_c.tick_params(labelsize=7)
     ax_c.grid(axis="y", alpha=0.18, lw=0.6)
@@ -203,17 +239,20 @@ def render_card(
         ax_c.spines[s].set_visible(False)
 
     # ---------------------------------------------------------------- header
-    farm_label = farm.replace("-", " ").title()
+    # The poster names the same farm "Brentwood (lease)"; the card used the slug,
+    # so a lease block read as if it were owned.
+    farm_label = FARM_NAME_BY_SLUG.get(farm, farm.replace("-", " ").title())
     fig.text(0.055, 0.945, f"{name}", fontsize=17, fontweight="bold", color="#0b1220")
     fig.text(0.055, 0.905,
-             f"{farm_label}{' · ' + region if region else ''}   |   "
-             f"season {start_md} → {end_md}   |   {years[0]}–{years[-1]}   |   "
-             f"Sentinel-2 L2A, 10 m",
+             f"{farm_label}   |   Growing season {growing_season(farm)}   |   "
+             f"{years[0]}–{years[-1]}   |   Sentinel-2 L2A, 10 m",
              fontsize=9.2, color="#3f3f46")
-    gaps = [y for y in years if int(years_meta[y].get("months_observed") or 0)
+    gaps = [y for y in years if y not in absent
+            and int(years_meta[y].get("months_observed") or 0)
             < int(years_meta[y].get("months_expected") or len(months))]
     foot = ("Grey cells are months with no usable scene under the paddock-visibility gate "
-            "(≥ 50 % of the paddock clear); they are never filled.")
+            "(≥ 50 % of the paddock clear); they are never filled. A hatched year was "
+            "not managed.")
     if gaps:
         foot += f"  Incomplete seasons: {', '.join(str(y) for y in gaps)}."
     fig.text(0.055, 0.045, foot, fontsize=7.2, color="#52525b", wrap=True)
@@ -255,7 +294,6 @@ def main(argv=None) -> int:
         written = render_card(
             grower=args.grower_slug, farm=args.farm_slug, slug=str(row.field_slug),
             name=str(row.paddock_name), out_png=out,
-            region=str(getattr(row, "region", "") or ""),
         )
         print(written or f"skip  {row.field_slug} (no NDVI tables)")
     return 0
