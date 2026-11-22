@@ -7,7 +7,8 @@ and Sentinel-2, and three of the output families are zone-level rather than
 farm-level. Rather than bend the US step list, this entrypoint runs the AU
 stages in the order their inputs require:
 
-    per farm   soil ingest (optional, needs the farm grids)
+    per farm   SILO daily weather (one grid point per farm)
+               soil ingest (optional, needs the farm grids)
                NDVI composites + monthly stats
                NDVI cards, soil property maps, field posters
                texture sheet, soil profile cards
@@ -43,6 +44,7 @@ FARM_ORDER = ("kanoona", "caroleese", "tullokan", "brentwood", "woodlands", "rio
 
 # stage key -> (script, label, per-farm env required)
 FARM_STAGES = {
+    "weather": ("au/ingest_au_weather.py", "SILO daily weather", True),
     "soil-ingest": ("au/ingest_au_soil.py", "SLGA/ASF soil ingest", True),
     "ndvi": ("au/build_au_ndvi.py", "NDVI composites and monthly stats", True),
     "cards": ("au/render_au_ndvi_cards.py", "NDVI cards", True),
@@ -58,6 +60,7 @@ ZONE_STAGES = {
 }
 
 DEFAULT_FARM_ORDER = (
+    "weather",
     "ndvi",
     "cards",
     "soil-maps",

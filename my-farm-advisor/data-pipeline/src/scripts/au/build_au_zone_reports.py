@@ -23,7 +23,11 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-import pandas as pd
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
 
 _SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 _AU_DIR = Path(__file__).resolve().parent
@@ -31,13 +35,29 @@ for _p in (_SCRIPTS_ROOT, _SCRIPTS_ROOT / "lib", _AU_DIR):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+from reporting_bootstrap import ensure_skill_path  # noqa: E402
+
+# The US weather plotters are plot-only functions over a long frame, so the AU
+# charts reuse them with a SILO adapter rather than a second copy of the same
+# three panels.
+ensure_skill_path("nasa-power-weather")
+from weather_reporting import (  # noqa: E402
+    plot_gdd_doy_overlay,
+    plot_precip_boxplot,
+    plot_temperature_doy_overlay,
+)
+
 from lib.au_common import (  # noqa: E402
     FARM_NAME_BY_SLUG,
     ZONE_LABELS,
+    growing_season,
     season_window,
 )
+from lib.au_weather import load_daily_weather, reporting_frame, silo_point  # noqa: E402
 from lib.paths import DATA_ROOT, farm_dir, farm_tables_dir  # noqa: E402
 from render_au_zone_posters import ZONES, _zone_frames, _zone_summaries  # noqa: E402
+
+GDD_BASE_C = 0.0
 
 YEARS = (2022, 2023, 2024, 2025, 2026)
 
@@ -98,6 +118,105 @@ def _soil_profiles(grower: str, farm_slugs) -> pd.DataFrame:
         if path.exists():
             frames.append(pd.read_csv(path, dtype={"field_id": str, "field_slug": str}))
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def _season_doy(farm_slug: str) -> tuple[int, int]:
+    """Day-of-year bounds of the season, on a non-leap reference year."""
+    start, end = season_window(farm_slug)
+
+    def _doy(md: str) -> int:
+        month, day = (int(part) for part in md.split("-"))
+        return datetime(2023, month, day).timetuple().tm_yday
+
+    return _doy(start), _doy(end)
+
+
+def _weather_png(grower: str, farm_slug: str, out_png: Path) -> dict | None:
+    """One farm's three climate panels: temperature, GDD, precipitation.
+
+    Weather is per farm, not per paddock: SILO delivers one 0.05 degree grid
+    point, and every paddock on a farm shares it. The charts therefore sit in
+    the zone report, one row per farm, and never on the 33 posters.
+    """
+    name = FARM_NAME_BY_SLUG.get(farm_slug, farm_slug)
+    daily = load_daily_weather(grower, farm_slug, name)
+    if daily.empty:
+        return None
+    frame = reporting_frame(daily, farm_slug)
+
+    fig, axes = plt.subplots(1, 3, figsize=(16.0, 4.4))
+    fig.patch.set_facecolor("#fbfaf8")
+    fig.subplots_adjust(top=0.68, bottom=0.12, left=0.045, right=0.985, wspace=0.24)
+    plot_temperature_doy_overlay(axes[0], frame,
+                                 title="Temperature by day-of-year")
+    plot_gdd_doy_overlay(axes[1], frame,
+                         title=f"Cumulative GDD, base {GDD_BASE_C:g} °C",
+                         base_temp_c=GDD_BASE_C)
+    plot_precip_boxplot(axes[2], frame,
+                        title="Cumulative precipitation by day-of-year")
+    doy_start, doy_end = _season_doy(farm_slug)
+    for ax in axes:
+        ax.axvspan(doy_start, doy_end, color="#fde68a", alpha=0.22, lw=0, zorder=0)
+        # The shared plotters place a legend with "best", which cannot know
+        # about the frost annotations added afterwards, and on these curves
+        # every corner of some panel is occupied. One legend row for the whole
+        # figure is clearer than three boxes fighting the data.
+        legend = ax.get_legend()
+        if legend is not None:
+            legend.remove()
+    handles, labels = axes[0].get_legend_handles_labels()
+    if handles:
+        fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.845),
+                   ncol=len(labels), frameon=False, fontsize=9.2,
+                   handlelength=1.7, columnspacing=1.8)
+
+    first, last = daily["date"].min(), daily["date"].max()
+    partial = [
+        int(year) for year, group in daily.groupby(daily["date"].dt.year)
+        if group["date"].max() < pd.Timestamp(int(year), 12, 31)
+    ]
+    point = silo_point(grower, farm_slug)
+    point_text = (
+        f"SILO {abs(point[0]):.2f}° S, {point[1]:.2f}° E · " if point else "SILO · "
+    )
+    fig.text(0.045, 0.975, name, fontsize=14, fontweight="bold", color="#0b1220",
+             va="top")
+    fig.text(
+        0.045, 0.905,
+        f"{point_text}daily {first:%d %b %Y} – {last:%d %b %Y} · "
+        f"GDD base {GDD_BASE_C:g} °C · shaded band = growing season "
+        f"{growing_season(farm_slug)}",
+        fontsize=9.0, color="#3f3f46", va="top",
+    )
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_png, dpi=140, facecolor=fig.get_facecolor())
+    plt.close(fig)
+
+    caption = (
+        f"{name} — one SILO grid point; daily {first:%d %b %Y} to "
+        f"{last:%d %b %Y}. Shaded band is the growing season "
+        f"({growing_season(farm_slug)}); GDD base {GDD_BASE_C:g} °C."
+    )
+    if partial:
+        caption += (
+            f" {', '.join(str(y) for y in partial)} is still in progress "
+            f"(daily data to {last:%d %b %Y}), so its lines stop there rather "
+            "than being projected to year end."
+        )
+    return {"label": name, "png": out_png, "caption": caption}
+
+
+def _weather_rows(grower: str, zone: str, farm_slugs, out_dir: Path) -> list[dict]:
+    rows = []
+    for farm_slug in farm_slugs:
+        out = out_dir / f"zone_weather_{zone}_{farm_slug}.png"
+        row = _weather_png(grower, str(farm_slug), out)
+        if row is None:
+            print(f"warn  {farm_slug}: no daily weather to chart")
+            continue
+        rows.append(row)
+    return rows
 
 
 def build_table(grower: str, zone: str, fields, summary: pd.DataFrame) -> pd.DataFrame:
@@ -165,9 +284,10 @@ def _fmt(value, key: str) -> str:
 
 def _markdown(grower: str, zone: str, fields, summary: pd.DataFrame,
               table: pd.DataFrame, poster: Path,
-              sheets: list[tuple[str, Path]] | None = None) -> str:
+              sheets: list[tuple[str, Path]] | None = None,
+              weather: list[dict] | None = None) -> str:
     label = ZONE_LABELS.get(zone, zone)
-    window = season_window(fields["farm_slug"].iloc[0])
+    season = growing_season(str(fields["farm_slug"].iloc[0]))
     total_ha = float(table["area_ha"].sum())
     farms = ", ".join(sorted(table["farm_label"].unique()))
 
@@ -176,7 +296,7 @@ def _markdown(grower: str, zone: str, fields, summary: pd.DataFrame,
         "",
         f"**{len(table)} paddocks · {total_ha:,.0f} ha · {farms}**",
         "",
-        f"Season window {window[0]} → {window[1]} · Sentinel-2 L2A 10 m · "
+        f"Growing season {season} · Sentinel-2 L2A 10 m · "
         f"one best cloud-screened scene per month · generated {_now()}",
         "",
         f"![{label} zone poster]({poster.name})",
@@ -229,6 +349,28 @@ def _markdown(grower: str, zone: str, fields, summary: pd.DataFrame,
             rel = os.path.relpath(sheet, poster.parent).replace(os.sep, "/")
             lines += ["", f"**{farm_label} texture**", "", f"![{farm_label} soil texture]({rel})"]
 
+    if weather:
+        lines += [
+            "",
+            "## Weather",
+            "",
+            "One SILO grid point per farm — every paddock on a farm shares it, which "
+            "is why the charts sit here and not on the paddock posters. Years overlay "
+            "by day-of-year so the growing season compares across seasons; a year "
+            "still in progress stops at its last observation and is never projected.",
+            "",
+        ]
+        for row in weather:
+            rel = os.path.relpath(row["png"], poster.parent).replace(os.sep, "/")
+            lines += [
+                f"**{row['label']}**",
+                "",
+                f"![{row['label']} temperature, GDD and precipitation]({rel})",
+                "",
+                row["caption"],
+                "",
+            ]
+
     managed_summary = summary[summary["status"].astype(str) != "not_managed"]
     gaps = managed_summary[
         managed_summary["months_observed"] < managed_summary["months_expected"]
@@ -266,7 +408,8 @@ def _markdown(grower: str, zone: str, fields, summary: pd.DataFrame,
         "Sources: Sentinel-2 L2A surface reflectance (SCL cloud/shadow mask); "
         "SLGA/ASF soil property grids (five depth slabs, 0–100 cm); "
         "grower crop and variety records; grower-supplied paddock boundaries. "
-        "Terrain from Copernicus GLO-30.",
+        "Terrain from Copernicus GLO-30. Climate from SILO daily grids, one "
+        "0.05° point per farm.",
         "",
     ]
     return "\n".join(lines)
@@ -330,9 +473,10 @@ def _table_html(table: pd.DataFrame, summary: pd.DataFrame) -> str:
 
 def _html(grower: str, zone: str, fields, summary: pd.DataFrame,
           table: pd.DataFrame, poster: Path,
-          sheets: list[tuple[str, Path]] | None = None) -> str:
+          sheets: list[tuple[str, Path]] | None = None,
+          weather: list[dict] | None = None) -> str:
     label = ZONE_LABELS.get(zone, zone)
-    window = season_window(fields["farm_slug"].iloc[0])
+    season = growing_season(str(fields["farm_slug"].iloc[0]))
     total_ha = float(table["area_ha"].sum())
     farms = ", ".join(sorted(table["farm_label"].unique()))
     encoded = base64.b64encode(poster.read_bytes()).decode("ascii")
@@ -389,6 +533,25 @@ def _html(grower: str, zone: str, fields, summary: pd.DataFrame,
     gaps = managed_summary[
         managed_summary["months_observed"] < managed_summary["months_expected"]
     ]
+
+    weather_block = ""
+    if weather:
+        weather_block = (
+            "<h2>Weather</h2>"
+            "<p>One SILO grid point per farm — every paddock on a farm shares it, "
+            "which is why the charts sit here and not on the paddock posters. Years "
+            "overlay by day-of-year so the growing season compares across seasons; a "
+            "year still in progress stops at its last observation and is never "
+            "projected.</p>"
+        )
+        for row in weather:
+            encoded_weather = base64.b64encode(row["png"].read_bytes()).decode("ascii")
+            weather_block += (
+                f"<figure><img alt='{html.escape(row['label'])} temperature, cumulative "
+                f"GDD and cumulative precipitation' "
+                f"src='data:image/png;base64,{encoded_weather}'>"
+                f"<figcaption>{html.escape(row['caption'])}</figcaption></figure>"
+            )
     if absent.empty:
         absent_line = "Every paddock in this zone is present in all five crop records."
     else:
@@ -412,7 +575,7 @@ def _html(grower: str, zone: str, fields, summary: pd.DataFrame,
 <style>{HTML_STYLE}</style></head><body>
 <h1>{html.escape(label)} — management zone</h1>
 <p class="sub">{len(table)} paddocks · {total_ha:,.0f} ha · {html.escape(farms)}</p>
-<p class="meta">Season window {window[0]} → {window[1]} · Sentinel-2 L2A 10 m ·
+<p class="meta">Growing season {season} · Sentinel-2 L2A 10 m ·
 one best cloud-screened scene per month · generated {_now()}</p>
 <dl class="kpi">{kpis}</dl>
 <figure>
@@ -431,6 +594,7 @@ one best cloud-screened scene per month · generated {_now()}</p>
 <h2>Paddocks</h2>
 {_table_html(table, summary)}
 {soil_block}
+{weather_block}
 <h2>Data notes</h2>
 <ul>
 <li>Colour is the mean of the observed monthly median NDVI; one fixed scale is
@@ -445,7 +609,8 @@ affected by grazing, sowing date and stubble.</li>
 </ul>
 <footer>Sources: Sentinel-2 L2A surface reflectance (SCL cloud/shadow mask);
 SLGA/ASF soil property grids (five depth slabs, 0–100 cm); grower crop and variety
-records; grower-supplied paddock boundaries; Copernicus GLO-30 terrain.
+records; grower-supplied paddock boundaries; Copernicus GLO-30 terrain; SILO daily
+climate, one 0.05° grid point per farm.
 Generated by <code>au/build_au_zone_reports.py</code>.</footer>
 </body></html>
 """
@@ -478,15 +643,19 @@ def main(argv=None) -> int:
             continue
         table = build_table(args.grower_slug, zone, subset, summary)
         sheets = _texture_sheets(args.grower_slug, list(subset["farm_slug"].unique()))
+        weather = _weather_rows(args.grower_slug, zone,
+                                list(subset["farm_slug"].unique()), out_dir)
 
         md_path = out_dir / f"zone_report_{zone}.md"
         md_path.write_text(
-            _markdown(args.grower_slug, zone, subset, summary, table, poster, sheets),
+            _markdown(args.grower_slug, zone, subset, summary, table, poster, sheets,
+                      weather),
             encoding="utf-8",
         )
         html_path = out_dir / f"zone_report_{zone}.html"
         html_path.write_text(
-            _html(args.grower_slug, zone, subset, summary, table, poster, sheets),
+            _html(args.grower_slug, zone, subset, summary, table, poster, sheets,
+                  weather),
             encoding="utf-8",
         )
         written.extend([md_path, html_path])
