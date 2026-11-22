@@ -4,8 +4,9 @@
     fig02_seasonal_rainfall.png  seasonal rainfall by year and region
     fig03_crop_mix.png           crop area share by region and year
     fig04_paddock_map.png        paddocks coloured by 2026 crop
+    fig05_ndvi_season.png        NDVI season shape, zone trajectory, crops, rain
 
-Figure 2 is skipped with a message if the weather tables have not been built.
+Figures 2 and 5 are skipped with a message if their input tables are absent.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Polygon as MplPolygon
 from shapely.affinity import scale as shapely_scale
 
@@ -64,6 +66,11 @@ CROP_ORDER = [
 ]
 
 SKIP_LABELS = {"T1", "T2", "T3", "T4", "T5", "D1", "C1", "C2", "C3"}
+
+MONTH_ABBR = {
+    4: "Apr", 5: "May", 6: "Jun", 7: "Jul",
+    8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov",
+}
 
 plt.rcParams.update(
     {
@@ -548,9 +555,144 @@ def figure_rainfall() -> Path | None:
     return path
 
 
+def figure_ndvi_season(panel: pd.DataFrame) -> Path | None:
+    """Season behaviour of the NDVI record: shape, zones, crops, rain."""
+    field_year_path = EXAMPLES / "ndvi_field_year.csv"
+    monthly_path = EXAMPLES / "ndvi_monthly.csv"
+    season_path = EXAMPLES / "weather_seasonal.csv"
+    for path in (field_year_path, monthly_path, season_path):
+        if not path.exists():
+            print(f"{path.name} not found — skipping figure 5")
+            return None
+
+    field_year = pd.read_csv(field_year_path, dtype={"field_slug": str})
+    monthly = pd.read_csv(monthly_path, dtype={"field_slug": str})
+    weather = pd.read_csv(season_path)
+    region_by_farm = (
+        panel.drop_duplicates("farm").set_index("farm")["region"].to_dict()
+    )
+    weather["region"] = weather["farm"].map(region_by_farm)
+
+    observed = field_year[field_year["status"] == "observed"]
+    used = monthly[monthly["used_in_season"].astype(bool)]
+    months = sorted(used["month"].unique())
+
+    fig, axes = plt.subplots(2, 2, figsize=(11.4, 8.2))
+    fig.patch.set_facecolor("white")
+
+    # (a) monthly climatology per zone -------------------------------------
+    ax = axes[0, 0]
+    for region in REGIONS:
+        series = (
+            used[used["region"] == region]
+            .groupby("month")["ndvi_median"].median()
+            .reindex(months)
+        )
+        ax.plot(range(len(months)), series.values, marker="o", markersize=4.4,
+                linewidth=1.9, color=REGION_COLOUR[region], label=region)
+    pooled = used.groupby("month")["ndvi_median"].median().reindex(months)
+    ax.plot(range(len(months)), pooled.values, color="#3f3f46", linewidth=1.4,
+            linestyle=(0, (3, 2)), zorder=2, label="All zones")
+    ax.set_xticks(range(len(months)))
+    ax.set_xticklabels([MONTH_ABBR[int(m)] for m in months], fontsize=8.2)
+    ax.set_ylabel("Median NDVI")
+    ax.set_ylim(0.05, 0.68)
+    ax.grid(axis="y", color="#ececec", linewidth=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title("Season shape — monthly median NDVI", fontsize=10.2,
+                 loc="left", fontweight="bold")
+
+    # (b) zone trajectories of the season integral --------------------------
+    ax = axes[0, 1]
+    zone_year = observed.pivot_table(
+        index="region", columns="year",
+        values="season_integral_ndvi_months", aggfunc="median",
+    ).reindex(REGIONS)
+    x_years = np.arange(len(YEARS))
+    ax.axvspan(-0.35, 0.35, color="#f4f1e6", zorder=0)
+    for region in REGIONS:
+        ax.plot(x_years, zone_year.loc[region, YEARS].values, marker="o",
+                markersize=5.0, linewidth=1.9, color=REGION_COLOUR[region],
+                label=region)
+    ax.set_xticks(x_years)
+    ax.set_xticklabels([str(y) for y in YEARS], fontsize=8.2)
+    ax.set_ylabel("NDVI-months")
+    ax.set_ylim(1.2, 3.9)
+    ax.grid(axis="y", color="#ececec", linewidth=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title("Season integral by zone — median of paddocks", fontsize=10.2,
+                 loc="left", fontweight="bold")
+    ax.annotate("2022: wettest season", xy=(0.0, 1.28), xytext=(0.45, 1.32),
+                fontsize=7.8, color="#6b6b6b", va="bottom")
+
+    # (c) crop ordering ----------------------------------------------------
+    ax = axes[1, 0]
+    by_crop = observed.groupby("crop").agg(
+        mean=("season_mean_ndvi", "median"), n=("year", "size")
+    ).sort_values("mean")
+    positions = np.arange(len(by_crop))
+    ax.barh(positions, by_crop["mean"].values,
+            color=[CROP_COLOUR[c] for c in by_crop.index],
+            edgecolor="#3f3f46", linewidth=0.5, height=0.68)
+    for y, (crop, row) in enumerate(by_crop.iterrows()):
+        ax.text(row["mean"] + 0.008, y, f"{row['mean']:.2f}  (n={int(row['n'])})",
+                va="center", fontsize=7.9, color="#27272a")
+    ax.set_yticks(positions)
+    ax.set_yticklabels([short_crop(c) for c in by_crop.index], fontsize=8.4)
+    ax.set_xlabel("Median season mean NDVI")
+    ax.set_xlim(0, 0.56)
+    ax.grid(axis="x", color="#ececec", linewidth=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title("Canopy by crop — all zones, all seasons", fontsize=10.2,
+                 loc="left", fontweight="bold")
+
+    # (d) season integral against season rain ------------------------------
+    ax = axes[1, 1]
+    joined = observed.merge(
+        weather[["farm", "year", "rain_season_mm"]], on=["farm", "year"],
+        how="left",
+    )
+    for region in REGIONS:
+        sub = joined[joined["region"] == region]
+        ax.scatter(sub["rain_season_mm"], sub["season_integral_ndvi_months"],
+                   s=22, color=REGION_COLOUR[region], alpha=0.62,
+                   edgecolor="white", linewidth=0.4, label=region)
+    rho = joined["season_integral_ndvi_months"].corr(
+        joined["rain_season_mm"], method="spearman")
+    ax.text(0.03, 0.955, f"Spearman ρ = {rho:.2f}", transform=ax.transAxes,
+            fontsize=8.4, color="#3f3f46", va="top",
+            bbox=dict(boxstyle="round,pad=0.26", fc="white", ec="#e4e4e7"))
+    ax.set_xlabel("Growing-season rain (mm)")
+    ax.set_ylabel("Season integral (NDVI-months)")
+    ax.set_xlim(140, 800)
+    ax.set_ylim(0.9, 4.7)
+    ax.grid(color="#ececec", linewidth=0.6)
+    ax.set_axisbelow(True)
+    ax.set_title("Integral against season rain — one point per paddock-year",
+                 fontsize=10.2, loc="left", fontweight="bold")
+
+    handles = [Line2D([], [], color=REGION_COLOUR[r], marker="o",
+                      markersize=4.6, linewidth=1.9, label=r) for r in REGIONS]
+    handles.append(Line2D([], [], color="#3f3f46", linewidth=1.4,
+                          linestyle=(0, (3, 2)), label="All zones"))
+    fig.legend(handles=handles, loc="upper right", bbox_to_anchor=(0.995, 0.952),
+               ncol=4, frameon=False, fontsize=8.4, handlelength=1.6,
+               columnspacing=1.6)
+
+    fig.suptitle(
+        "NDVI season behaviour: one broad peak, a zonal gradient, and a wet-year exception",
+        x=0.012, ha="left", fontweight="bold", fontsize=12,
+    )
+    fig.tight_layout(rect=(0, 0, 1, 0.935), w_pad=1.6, h_pad=1.4)
+    path = FIG_DIR / "fig05_ndvi_season.png"
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
+    return path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", choices=["1", "2", "3", "4"])
+    parser.add_argument("--only", choices=["1", "2", "3", "4", "5"])
     args = parser.parse_args()
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -565,6 +707,8 @@ def main() -> int:
         made.append(figure_crop_mix(panel))
     if args.only in (None, "4"):
         made.append(figure_map(panel))
+    if args.only in (None, "5"):
+        made.append(figure_ndvi_season(panel))
 
     for path in made:
         if path:
