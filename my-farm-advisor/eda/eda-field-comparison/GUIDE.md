@@ -27,6 +27,8 @@ from scratch each season without stable identifiers.
 | `examples/qc_boundaries.csv` | boundary change and area diagnostics |
 | `examples/qc_crosswalk.csv` | retired sub-paddocks mapped to parents |
 | `examples/qc_summary.md` | plain-language audit record |
+| `examples/ndvi_field_year.csv` | one row per field-year, NDVI season summary |
+| `examples/ndvi_monthly.csv` | one row per field-month, best-scene NDVI |
 
 ## Commands
 
@@ -37,17 +39,36 @@ python src/build_panel.py       # panel_field_year.csv, rotation_spine.csv
 python src/qc_boundaries.py     # qc_boundaries.csv, qc_crosswalk.csv
 python src/fetch_weather.py     # requires SILO_EMAIL, writes weather tables
 python src/fetch_weather.py --offline   # rebuild from cache, no email, no network
-python src/make_figures.py      # figures/fig01..fig04
+python src/make_figures.py      # figures/fig01..fig05
 python src/make_figures.py --only 4
+python src/export_ndvi_examples.py      # pipeline NDVI tables -> examples/
+python src/build_analysis.py            # rewrites ANALYSIS.md
+python src/build_analysis.py --check    # fails if ANALYSIS.md is stale
 ```
 
 `fetch_weather.py --offline` rebuilds every derived weather table from the
 raw SILO cache. Use it for any change to the season definition; only a cache
 miss requires the email address.
 
-`make_figures.py` skips figure 2 with a message if the weather tables are
+`make_figures.py` skips figure 2 or 5 with a message if the tables they need are
 absent, so the panel and boundary work can proceed before climate access is
 arranged.
+
+`export_ndvi_examples.py` is the one command here that reads the untracked
+runtime tree; everything after it reads `examples/` alone. It drops the two
+runtime-only columns (`composite_tif`, `scene_id`) so the committed tables hold
+data rather than paths into a machine that no longer exists.
+
+## Analysis
+
+[ANALYSIS.md](ANALYSIS.md) answers the assignment's data-analysis question in
+three parts: rotation from the panel, climate from the SILO seasonal table, and
+NDVI season behaviour from the two NDVI tables. Its numbers are not typed into
+the markdown — `src/build_analysis.py` computes them and substitutes them into
+`src/analysis_template.md`. The builder fails if a template token has no
+computation behind it and if a computed value is never printed, so a changed CSV
+cannot leave a stale sentence behind. `--check` is the test to run before
+committing an analysis change.
 
 ## Conventions
 
@@ -86,7 +107,10 @@ Growing seasons differ by location. Kanoona, the easternmost farm, runs
 **1 April – 30 November** (244 days). Every other farm runs **1 April –
 15 November** (229 days). The difference is real management, so it is kept in
 the data rather than smoothed away: `season_window`, `season_days` and
-`season_expected_days` record each farm's own dates.
+`season_expected_days` record each farm's own dates. The pipeline's zone-report
+weather charts use each farm's own season and plot GDD base 0 °C for every crop,
+labelled on the axis, because the rotation mixes cereals, canola and legumes on
+one farm.
 
 Because a two-week head start would flatter Kanoona in any regional total,
 every farm also carries a **common window of 1 April – 15 November**
@@ -111,10 +135,19 @@ received.
 
 `fig01_field_area.png` field size by region, `fig02_seasonal_rainfall.png`
 seasonal rainfall, `fig03_crop_mix.png` crop area share, `fig04_paddock_map.png`
-overview plus one panel per region coloured by the latest crop.
+overview plus one panel per region coloured by the latest crop,
+`fig05_ndvi_season.png` monthly NDVI shape by zone, the season integral by zone
+and year, canopy by crop, and integral against season rain.
 
 ## Limits
 
 Weather is per farm centroid, not per field. A partial season is labelled as
 such. Differences between regions are associations, not causal effects: the
 regions differ in field size, crop mix and management at the same time.
+
+NDVI is a monthly best-scene composite, so a missing month is reported as a gap
+and never interpolated. A missing November raises a season mean by about 0.02
+NDVI while removing about 0.19 NDVI-months from the integral; the analysis
+quantifies both. The 10 `not_managed` field-years are excluded from every crop
+statistic even though NDVI exists for them — no crop record means no crop to
+compare.
