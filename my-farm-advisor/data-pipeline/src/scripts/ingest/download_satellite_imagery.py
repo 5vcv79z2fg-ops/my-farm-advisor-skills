@@ -17,7 +17,13 @@ _SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 if str(_SCRIPTS_ROOT) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_ROOT))
 
-from lib.paths import DATA_ROOT, farm_boundary_path, field_boundary_path, field_satellite_dir  # noqa: E402
+from lib.paths import (  # noqa: E402
+    DATA_ROOT,
+    farm_boundary_path,
+    farm_tables_dir,
+    field_boundary_path,
+    field_satellite_dir,
+)
 from lib.satellite_imagery import (  # noqa: E402
     LANDSAT_COLLECTION,
     SENTINEL_COLLECTION,
@@ -231,6 +237,7 @@ def _scenes_per_month() -> int:
 def _select_scene_inventory(
     features: list[dict[str, Any]], *, max_scenes_per_year: int,
     per_month: int = 1,
+    only_months: set[int] | None = None,
 ) -> list[dict[str, Any]]:
     sorted_features = sorted(
         features,
@@ -248,6 +255,10 @@ def _select_scene_inventory(
 
     selected: list[dict[str, Any]] = []
     for month in _GROWING_SEASON_MONTHS:
+        # gap-fill mode targets only the months that have no usable scene; every
+        # other month keeps the scene it already has and is not downloaded again
+        if only_months is not None and month not in only_months:
+            continue
         monthly = by_month.get(month, [])
         # Two items of the same acquisition (different processing baselines)
         # give no second chance at seeing the paddock, so a candidate slot only
@@ -289,16 +300,21 @@ def _distinct_dates_by_month(scenes: list[dict[str, Any]]) -> dict[int, int]:
 
 
 def _candidates_are_exhausted(
-    entry: dict[str, Any] | None, scenes: list[dict[str, Any]], per_month: int
+    entry: dict[str, Any] | None, scenes: list[dict[str, Any]]
 ) -> bool:
-    """True when every month already holds as many distinct dates as exist."""
+    """True when every month already holds every distinct date that exists.
+
+    The per-month cap is deliberately *not* part of the test. Comparing against
+    ``min(per_month, available)`` reported "exhausted" while a third date sat
+    unfetched - and raising ``AG_SCENES_PER_MONTH`` is the whole point of a
+    top-up, so the comparison has to be against availability itself.
+    """
     availability = (entry or {}).get("month_candidate_availability") or {}
     if not availability:
         return False
     have = _distinct_dates_by_month(scenes)
     for month, available in availability.items():
-        need = min(per_month, int(available))
-        if have.get(int(month), 0) < need:
+        if have.get(int(month), 0) < int(available):
             return False
     return True
 
@@ -458,6 +474,7 @@ def _download_sensor_archive(
     cloud_cover_max: float,
     max_scenes_per_year: int,
     force: bool,
+    gap_months: dict[int, set[int]] | None = None,
 ) -> None:
     sensor_root = field_satellite_dir(grower_slug, farm_slug, field_slug) / sensor
     manifest_path = sensor_root / "manifest.json"
@@ -473,12 +490,18 @@ def _download_sensor_archive(
 
     for year in years:
         previous_entry = previous_by_year.get(year)
+        if gap_months is not None and not gap_months.get(year):
+            # nothing missing in this year: carry it over untouched rather than
+            # re-searching a season that already has a scene in every month
+            if previous_entry is not None:
+                year_entries.append(previous_entry)
+            continue
         if not force:
             can_reuse_year, reusable_scenes = _year_entry_fully_reusable(
                 previous_entry, sensor_root=sensor_root, sensor=sensor
             )
             if can_reuse_year and not _candidates_are_exhausted(
-                previous_entry, reusable_scenes, _scenes_per_month()
+                previous_entry, reusable_scenes
             ):
                 # files are reusable but a month still has unfetched dates, so
                 # fall through to the search and top the year up
@@ -559,8 +582,28 @@ def _download_sensor_archive(
         selected_features = _select_scene_inventory(
             features, max_scenes_per_year=max_scenes_per_year,
             per_month=_scenes_per_month(),
+            only_months=(gap_months or {}).get(year),
         )
-        if not selected_features:
+        # In gap-fill mode the search above only covers the missing months, so
+        # the months that already have a scene keep theirs: the manifest is
+        # rebuilt from the union, never from the search result alone.
+        carried: list[dict[str, Any]] = []
+        if gap_months is not None and previous_entry is not None:
+            keep = {
+                int(str(scene.get("scene_date", "0000-00-00"))[5:7])
+                for scene in previous_entry.get("scenes", [])
+            } - (gap_months.get(year) or set())
+            for scene in previous_entry.get("scenes", []):
+                month = int(str(scene.get("scene_date", "0000-00-00"))[5:7])
+                if month not in keep:
+                    continue
+                scene_date = datetime.fromisoformat(str(scene.get("scene_date")))
+                paths = _scene_paths(sensor_root, scene_date, sensor)
+                if _existing_entry_is_reusable(
+                    scene, str(scene.get("scene_id")), paths
+                ):
+                    carried.append(scene)
+        if not selected_features and not carried:
             year_entries.append(
                 {
                     "year": year,
@@ -575,8 +618,10 @@ def _download_sensor_archive(
             print(f"warn  {field_id} {sensor} {year} no scene found")
             continue
 
-        scenes: list[dict[str, Any]] = []
-        all_reusable = not force and previous_entry is not None
+        scenes: list[dict[str, Any]] = list(carried)
+        # a gap-fill year was re-examined by definition, so never report it as
+        # a straight reuse even when the search found nothing new
+        all_reusable = not force and previous_entry is not None and not gap_months
         for feature in selected_features:
             scene_date = feature_datetime(feature)
             scene_paths = _scene_paths(sensor_root, scene_date, sensor)
@@ -652,12 +697,46 @@ def _download_sensor_archive(
     _write_json(manifest_path, manifest)
 
 
+def _gap_months(grower_slug: str, farm_slug: str) -> dict[str, dict[int, set[int]]]:
+    """Months inside a managed season that already have no usable scene.
+
+    Read from the NDVI stage's own table, so the downloader chases exactly the
+    holes the report prints instead of re-downloading seasons that are whole.
+    A field with no gaps is absent from the mapping and is left untouched.
+    """
+    path = farm_tables_dir(grower_slug, farm_slug) / "ndvi_field_year_summary.csv"
+    if not path.exists():
+        return {}
+    frame = pd.read_csv(path, dtype={"field_slug": str})
+    gaps: dict[str, dict[int, set[int]]] = {}
+    for row in frame.itertuples(index=False):
+        if str(getattr(row, "status", "")) != "observed":
+            continue
+        raw = str(getattr(row, "missing_months", "") or "")
+        months: set[int] = set()
+        for token in raw.replace('"', "").split(","):
+            token = token.strip()
+            if not token:
+                continue
+            try:
+                value = float(token)
+            except ValueError:
+                continue
+            # a single month in an otherwise empty column is written as "11.0"
+            if value.is_integer():
+                months.add(int(value))
+        if months:
+            gaps.setdefault(str(row.field_slug), {})[int(row.year)] = months
+    return gaps
+
+
 def main() -> None:
     print("=" * 60)
     print("Satellite imagery download - raw TIFFs first")
     print("=" * 60)
 
     force = os.environ.get("AG_FORCE") == "1"
+    fill_gaps = os.environ.get("AG_FILL_GAPS") == "1"
     config = FieldReportingConfig(
         farm_name=_DEFAULT_FARM_NAME,
         field_boundary_path=str(farm_boundary_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
@@ -666,6 +745,15 @@ def main() -> None:
     sensors = _sensors_requested()
     print(f"sensors: {', '.join(sensors)} | years: {imagery_years}")
     print(f"season window: {_SEASON_START_MD} -> {_SEASON_END_MD} (months {_GROWING_SEASON_MONTHS})")
+    gap_map: dict[str, dict[int, set[int]]] = {}
+    if fill_gaps:
+        gap_map = _gap_months(_DEFAULT_GROWER, _DEFAULT_FARM)
+        targeted = sum(len(months) for years in gap_map.values()
+                       for months in years.values())
+        print(
+            f"gap-fill: {len(gap_map)} fields, {targeted} field-months, "
+            f"up to {_scenes_per_month()} candidate dates per month"
+        )
     field_slugs = _field_slug_lookup()
     fields = gpd.read_file(_REPO / config.field_boundary_path).to_crs("EPSG:4326")
 
@@ -689,6 +777,7 @@ def main() -> None:
                 cloud_cover_max=_sentinel_cloud_max(config.sentinel_cloud_cover_max),
                 max_scenes_per_year=9 * _scenes_per_month(),
                 force=force,
+                gap_months=(gap_map.get(field_slug, {}) if fill_gaps else None),
             )
         if "landsat" in sensors:
             _download_sensor_archive(

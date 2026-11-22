@@ -19,6 +19,8 @@ LANDSAT_COLLECTION = "landsat-c2-l2"
 SENTINEL_CLOUD_CLASSES = {3, 8, 9, 10, 11}
 LANDSAT_QA_MASK_BITS = (1, 2, 3, 4, 5)
 TRANSIENT_SEARCH_STATUS_CODES = {429, 500, 502, 503, 504}
+# The STAC search endpoint returns 400 for limit > 1000.
+SEARCH_LIMIT_MAX = 1000
 _TOKEN_CACHE: dict[str, tuple[str, float]] = {}
 
 
@@ -72,11 +74,13 @@ def search_features(
     if collection == LANDSAT_COLLECTION:
         query["platform"] = {"in": ["landsat-8", "landsat-9"]}
 
+    # The API rejects limit > 1000 with a plain 400, and callers scale the page
+    # size with the per-month candidate cap, so the clamp has to live here.
     body = {
         "collections": [collection],
         "bbox": [bbox[0], bbox[1], bbox[2], bbox[3]],
         "datetime": datetime_range,
-        "limit": limit,
+        "limit": max(1, min(int(limit), SEARCH_LIMIT_MAX)),
         "query": query,
     }
     last_error: Exception | None = None
