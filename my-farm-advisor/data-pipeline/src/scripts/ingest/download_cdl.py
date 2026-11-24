@@ -35,7 +35,7 @@ ensure_skill_path("cdl-cropland")
 from aci_reporting import ACI_MIN_YEAR, extract_aci_crop_composition
 from cdl_reporting import extract_crop_composition, summarize_crop_history
 
-DEFAULT_CDL_LATEST_YEAR = 2023  # 2026 program data rule: external data must be public by 2026-02-01 (CDL 2024+ publishes later)
+DEFAULT_CDL_LATEST_YEAR = 2025  # 2026 program data rule: CDL 2025 is public by 2026-02-01; newer years publish later
 DEFAULT_CDL_WINDOW_YEARS = 5
 
 
