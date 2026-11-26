@@ -65,7 +65,9 @@ API = "https://www.longpaddock.qld.gov.au/cgi-bin/silo/DataDrillDataset.php"
 VARIABLES = "RXNJE"
 
 START = "20220101"
-FINISH = "20261119"
+# Pinned rather than derived from date.today() so the committed tables stay
+# reproducible: re-running the pipeline does not silently move the window.
+FINISH = "20261126"
 
 # Sowing window start. Season end differs by farm: Kanoona runs later.
 SEASON_START = (4, 1)

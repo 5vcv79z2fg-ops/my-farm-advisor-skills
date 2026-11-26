@@ -49,7 +49,6 @@ CROP_COLOUR = {
     "Barley": "#b07b2a",
     "Canola": "#f2d024",
     "Narrow Leaf Lupin": "#7b6fa8",
-    "Field Peas": "#6f8faf",
     "Faba/Broad/Field Bean": "#5d7f5a",
     "Pasture": "#8fbf6f",
     "Not managed": "#c9c9c9",
@@ -60,7 +59,6 @@ CROP_ORDER = [
     "Barley",
     "Canola",
     "Narrow Leaf Lupin",
-    "Field Peas",
     "Faba/Broad/Field Bean",
     "Pasture",
 ]
