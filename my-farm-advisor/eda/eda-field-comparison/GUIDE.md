@@ -44,6 +44,8 @@ python src/make_figures.py --only 4
 python src/export_ndvi_examples.py      # pipeline NDVI tables -> examples/
 python src/build_analysis.py            # rewrites ANALYSIS.md
 python src/build_analysis.py --check    # fails if ANALYSIS.md is stale
+python src/build_report.py              # rewrites eda_report.html
+python src/build_report.py --check      # fails if the HTML page is stale
 ```
 
 `fetch_weather.py --offline` rebuilds every derived weather table from the
@@ -69,6 +71,12 @@ the markdown — `src/build_analysis.py` computes them and substitutes them into
 computation behind it and if a computed value is never printed, so a changed CSV
 cannot leave a stale sentence behind. `--check` is the test to run before
 committing an analysis change.
+
+[eda_report.html](eda_report.html) is the one-page version: summary cards, five
+key tables, the five figures and the limits, with every image base64-embedded so
+the file opens from disk with no server or network. `src/build_report.py` builds
+it from the same `build_findings` result as `ANALYSIS.md`, and its `--check` flag
+is the drift test for the page.
 
 ## Conventions
 
@@ -96,6 +104,11 @@ is reused.
 - **Confirmation is a source.** A grower-confirmed crop for a year with no
   polygon is `crop_source = grower_confirmed` and records the year the
   geometry came from.
+- **Corrections are overrides.** When the grower corrects a recorded crop
+  label or variety, add a narrow key to `CROP_LABEL_CORRECTIONS` or
+  `VARIETY_CORRECTIONS` in `src/common.py` rather than editing the exported
+  CSV. Rebuild the panel and record the change in `examples/qc_summary.md`;
+  `variety_source` keeps the audit trail.
 
 ## Weather
 
@@ -138,6 +151,8 @@ seasonal rainfall, `fig03_crop_mix.png` crop area share, `fig04_paddock_map.png`
 overview plus one panel per region coloured by the latest crop,
 `fig05_ndvi_season.png` monthly NDVI shape by zone, the season integral by zone
 and year, canopy by crop, and integral against season rain.
+`eda_report.html` collects the five figures and the headline tables into one
+self-contained page.
 
 ## Limits
 

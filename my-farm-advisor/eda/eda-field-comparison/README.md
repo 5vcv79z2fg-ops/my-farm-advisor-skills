@@ -6,8 +6,11 @@ compared across three management regions.
 
 The analysis of that panel — rotation, climate and NDVI season behaviour — is
 [ANALYSIS.md](ANALYSIS.md), built from the committed example tables by
-`src/build_analysis.py`. Method and conventions live in [GUIDE.md](GUIDE.md);
-local operating rules are in [AGENTS.md](AGENTS.md); the audit record is
+`src/build_analysis.py`. A self-contained one-page version with the figures
+embedded is [eda_report.html](eda_report.html), built from the same computed
+findings by `src/build_report.py`. Method and conventions live in
+[GUIDE.md](GUIDE.md); local operating rules are in [AGENTS.md](AGENTS.md); the
+workflow manifest is [SKILL.md](SKILL.md); the audit record is
 [examples/qc_summary.md](examples/qc_summary.md).
 
 ## Reviewing this branch
@@ -40,7 +43,9 @@ stage); those are called out in their messages.
 | `src/export_ndvi_examples.py` | NDVI tables from the runtime tree → `examples/` |
 | `src/build_analysis.py` | computes every number in `ANALYSIS.md`; `--check` is the drift test |
 | `src/analysis_template.md` | the analysis prose, with computed values substituted in |
+| `src/build_report.py` | builds the self-contained `eda_report.html` from the same findings; `--check` is the drift test |
 | [ANALYSIS.md](ANALYSIS.md) | rotation, climate and NDVI season analysis |
+| [eda_report.html](eda_report.html) | one-page summary, five figures embedded, no external assets |
 | [examples/panel_field_year.csv](examples/panel_field_year.csv) | 165 rows, one per field-year |
 | [examples/rotation_spine.csv](examples/rotation_spine.csv) | one row per field, crop by year |
 | [examples/ndvi_field_year.csv](examples/ndvi_field_year.csv) | 165 rows, one per field-year, NDVI season summary |
@@ -83,6 +88,9 @@ blocks — see [ANALYSIS.md](ANALYSIS.md) for the evidence and the limits.
 - **Growing seasons differ.** Kanoona runs 1 April – 30 November (244 days);
   the other farms run 1 April – 15 November (229 days). Cross-region
   comparisons use the common window, which is complete for all 30 farm-years.
+- **Grower corrections are overrides.** Crop-label and variety fixes live in
+  `src/common.py` as documented maps, not hand edits to the exported CSVs, so
+  a rebuild reproduces them and `variety_source` keeps the provenance.
 
 ## Reproducing
 
@@ -94,6 +102,8 @@ python src/make_figures.py      # figures 1-5
 python src/export_ndvi_examples.py      # runtime NDVI tables -> examples/
 python src/build_analysis.py    # rewrites ANALYSIS.md
 python src/build_analysis.py --check    # fails if ANALYSIS.md is stale
+python src/build_report.py      # rewrites eda_report.html
+python src/build_report.py --check      # fails if the HTML page is stale
 ```
 
 Raw paddock layers, the daily weather cache and the NDVI pipeline tables live

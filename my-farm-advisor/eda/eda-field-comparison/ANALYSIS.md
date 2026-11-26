@@ -15,6 +15,10 @@ token has no computation behind it, and fails if a computed finding is never
 printed. So the sentences and the tables cannot drift apart, and
 `python src/build_analysis.py --check` is the drift test.
 
+A one-page summary of the same findings, with the five figures embedded, is
+[eda_report.html](eda_report.html). It is generated from the same computed
+dictionary by `src/build_report.py`.
+
 ## The short version
 
 - **33 paddocks over 5 seasons, but a very uneven

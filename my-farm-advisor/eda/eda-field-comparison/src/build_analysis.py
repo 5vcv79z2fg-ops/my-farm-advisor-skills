@@ -779,6 +779,10 @@ def render(template: str, findings: dict[str, str | Table]) -> str:
         return value
 
     text = PLACEHOLDER.sub(substitute, template)
+    # The template lives in src/ but renders into ANALYSIS.md at the workflow
+    # root, so its links are authored one directory up and rebased here to keep
+    # both the template and the rendered document pointing at real files.
+    text = re.sub(r"\]\(\.\./", "](", text)
     return text if text.endswith("\n") else text + "\n"
 
 

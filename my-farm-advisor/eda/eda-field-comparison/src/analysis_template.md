@@ -15,6 +15,10 @@ token has no computation behind it, and fails if a computed finding is never
 printed. So the sentences and the tables cannot drift apart, and
 `python src/build_analysis.py --check` is the drift test.
 
+A one-page summary of the same findings, with the five figures embedded, is
+[eda_report.html](../eda_report.html). It is generated from the same computed
+dictionary by `src/build_report.py`.
+
 ## The short version
 
 - **{{n_fields}} paddocks over {{n_seasons}} seasons, but a very uneven
@@ -37,7 +41,7 @@ printed. So the sentences and the tables cannot drift apart, and
   ({{pm_gap_pct}} % missing), and the {{pm_gaps}} gaps are named rather than
   interpolated.
 
-![NDVI season behaviour](examples/figures/fig05_ndvi_season.png)
+![NDVI season behaviour](../examples/figures/fig05_ndvi_season.png)
 
 ## What this data can and cannot say
 
