@@ -108,7 +108,9 @@ is reused.
   label or variety, add a narrow key to `CROP_LABEL_CORRECTIONS` or
   `VARIETY_CORRECTIONS` in `src/common.py` rather than editing the exported
   CSV. Rebuild the panel and record the change in `examples/qc_summary.md`;
-  `variety_source` keeps the audit trail.
+  `variety_source` keeps the audit trail. Then re-run
+  `src/stage_pipeline_grower.py`, because the AU pipeline keeps its own copy of
+  the crop records and will keep printing the old label until it is restaged.
 
 ## Weather
 

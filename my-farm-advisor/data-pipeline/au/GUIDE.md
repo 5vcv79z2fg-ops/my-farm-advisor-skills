@@ -138,6 +138,11 @@ hatched grey.
 - **Counties are labels, not geometry.** `COUNTY_LABELS` translates the printed
   name (`Hilltops Shire`); the stored GADM attribute keeps the source value, so
   a label change never needs a re-clip.
+- **The pipeline keeps its own crop copy.** `manifests/field-crops.csv` is
+  written by `eda/eda-field-comparison/src/stage_pipeline_grower.py` from the
+  EDA panel, not read live from it. After a crop or variety correction, restage
+  the manifest, rebuild the farm's NDVI tables, then regenerate cards, posters
+  and zone reports; otherwise the reports keep printing the old label.
 - **SILO is refreshed through the EDA client.** The raw cache is updated by
   `eda/eda-field-comparison/src/fetch_weather.py`; the AU weather stage only
   normalises what that cache holds.
