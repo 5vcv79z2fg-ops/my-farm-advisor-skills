@@ -7,4 +7,5 @@ Open these guides when analyzing agricultural datasets, comparing conditions, or
 - [Correlate Guide](eda-correlate/GUIDE.md) - pairwise and multivariate relationships
 - [Time Series Guide](eda-time-series/GUIDE.md) - seasonal and longitudinal views
 - [Visualize Guide](eda-visualize/GUIDE.md) - charts, plots, and dashboards
+- [Field Comparison subskill](eda-field-comparison/SKILL.md) - manifest: when to load, pipeline order, guardrails; links README, GUIDE, AGENTS, ANALYSIS and the report
 - [Field Comparison Guide](eda-field-comparison/GUIDE.md) - multi-year paddock panels, boundary QC, rotation and weather comparison across regions
