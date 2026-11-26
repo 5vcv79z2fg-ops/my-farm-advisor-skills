@@ -90,6 +90,13 @@ def load_panel() -> pd.DataFrame:
 
 
 def figure_field_area(panel: pd.DataFrame) -> Path:
+    """One bar per paddock, grouped into the three management regions.
+
+    A log axis compressed the lease blocks and stretched the small Harden
+    fields until 20 ha looked like 100 ha. Bars on a shared linear scale keep
+    magnitude as bar length, and grouping by region still shows that six lease
+    paddocks hold most of the footprint.
+    """
     observed = panel[panel["status"] == "observed"]
     latest = (
         observed[observed["year"].isin([2025, 2026])]
@@ -97,55 +104,82 @@ def figure_field_area(panel: pd.DataFrame) -> Path:
         .groupby("field_id")
         .tail(1)
     )
-    fig, ax = plt.subplots(figsize=(7.2, 3.0))
-    rng = np.random.default_rng(7)
 
-    for i, region in enumerate(REGIONS):
-        vals = latest.loc[latest["region"] == region, "area_ha_geom"].values
-        colour = REGION_COLOUR[region]
-        ax.boxplot(
-            vals,
-            positions=[i],
-            vert=False,
-            widths=0.45,
-            showfliers=False,
-            patch_artist=True,
-            boxprops=dict(facecolor=colour, alpha=0.18, edgecolor=colour),
-            medianprops=dict(color=colour, linewidth=1.6),
-            whiskerprops=dict(color=colour, linewidth=1.0),
-            capprops=dict(color=colour, linewidth=1.0),
+    fig, ax = plt.subplots(figsize=(7.4, 4.8))
+
+    sizes = [
+        int((latest["region"] == region).sum()) for region in REGIONS
+    ]
+    gap = 1.1
+    cursor = sum(sizes) + gap * (len(REGIONS) - 1)
+    centres: dict[str, float] = {}
+
+    for region, n in zip(REGIONS, sizes):
+        vals = np.sort(
+            latest.loc[latest["region"] == region, "area_ha_geom"].values
         )
-        jitter = rng.normal(0, 0.055, size=len(vals))
-        ax.scatter(
+        colour = REGION_COLOUR[region]
+        base = cursor - n
+        positions = base + np.arange(n)
+        ax.barh(
+            positions,
             vals,
-            i + jitter,
-            s=26,
+            height=0.78,
             color=colour,
-            alpha=0.85,
+            alpha=0.92,
             edgecolor="white",
-            linewidth=0.5,
+            linewidth=0.6,
             zorder=3,
         )
-        ax.annotate(
-            f"n = {len(vals)}",
-            xy=(float(np.max(vals)), i),
-            xytext=(0, 9),
-            textcoords="offset points",
-            ha="center",
-            va="bottom",
-            fontsize=8,
-            color=colour,
-            fontweight="bold",
+        median = float(np.median(vals))
+        ax.plot(
+            [median, median],
+            [base - 0.45, base + n + 0.45],
+            color=colour, linewidth=1.3, linestyle=(0, (2.5, 1.6)),
+            zorder=4,
         )
+        centres[region] = base + (n - 1) / 2.0
+        cursor = base - gap
 
-    ax.set_yticks(range(len(REGIONS)))
-    ax.set_yticklabels(REGIONS)
-    ax.set_xscale("log")
-    ax.set_xlabel("Field area (ha, log scale)")
-    ax.set_title("Field size by management region", loc="left", fontweight="bold")
-    ax.grid(axis="x", which="major", color="#e6e6e6", linewidth=0.7)
+    # Band separators, then one y tick per band rather than per paddock.
+    cursor = sum(sizes) + gap * (len(REGIONS) - 1)
+    for n in sizes[:-1]:
+        cursor -= n
+        ax.axhline(
+            cursor - gap / 2.0, color="#d4d4d8", linewidth=0.8, zorder=1
+        )
+        cursor -= gap
+
+    ax.set_yticks([centres[r] for r in REGIONS])
+    labels = []
+    for region in REGIONS:
+        vals = latest.loc[latest["region"] == region, "area_ha_geom"].values
+        labels.append(
+            f"{region}\n{len(vals)} paddocks · median {np.median(vals):.1f} ha"
+        )
+    ax.set_yticklabels(labels, fontsize=8.4)
+    for tick, region in zip(ax.get_yticklabels(), REGIONS):
+        tick.set_color(REGION_COLOUR[region])
+        tick.set_fontweight("bold")
+
+    ax.set_xlim(0, 510)
+    ax.set_xticks(np.arange(0, 501, 100))
+    ax.set_xlabel("Paddock area (ha, latest boundary)")
+    ax.set_title(
+        "Field size by management region — one bar per paddock",
+        loc="left", fontweight="bold", pad=24,
+    )
+    ax.text(
+        0.0, 1.005,
+        "Dashed line = regional median. Same 0–500 ha linear scale throughout.",
+        transform=ax.transAxes, fontsize=7.2, color="#666666",
+        style="italic", va="bottom",
+    )
+    ax.grid(axis="x", color="#ececec", linewidth=0.6)
     ax.set_axisbelow(True)
-    ax.set_ylim(-0.6, len(REGIONS) - 0.4)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+
     fig.tight_layout()
     path = FIG_DIR / "fig01_field_area.png"
     fig.savefig(path, bbox_inches="tight")
