@@ -86,6 +86,22 @@ def grower_logs_dir(grower_slug: str) -> Path:
     return grower_dir(grower_slug) / "logs"
 
 
+def grower_farms_dir(grower_slug: str) -> Path:
+    return grower_dir(grower_slug) / "farms"
+
+
+def grower_derived_dir(grower_slug: str) -> Path:
+    return grower_dir(grower_slug) / "derived"
+
+
+def grower_reports_dir(grower_slug: str) -> Path:
+    return grower_derived_dir(grower_slug) / "reports"
+
+
+def grower_report_path(grower_slug: str, filename: str) -> Path:
+    return grower_reports_dir(grower_slug) / filename
+
+
 def farm_dir(grower_slug: str, farm_slug: str) -> Path:
     return ensure_data_root_path(
         grower_dir(grower_slug) / "farms" / validate_path_slug(farm_slug, "farm_slug")

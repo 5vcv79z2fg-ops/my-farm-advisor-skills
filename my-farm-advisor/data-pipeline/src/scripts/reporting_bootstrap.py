@@ -406,13 +406,22 @@ def ensure_canonical_data_tree(
     (farm / "derived" / "summaries").mkdir(parents=True, exist_ok=True)
     (farm / "derived" / "dashboards").mkdir(parents=True, exist_ok=True)
     (farm / "derived" / "tables").mkdir(parents=True, exist_ok=True)
+    farm_metadata_path = farm / "farm.json"
+    existing_state = None
+    if farm_metadata_path.is_file():
+        try:
+            existing_metadata = json.loads(farm_metadata_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            existing_metadata = {}
+        if isinstance(existing_metadata, dict):
+            existing_state = existing_metadata.get("state")
     _write_json(
-        farm / "farm.json",
+        farm_metadata_path,
         {
             "grower_slug": grower_slug,
             "farm_slug": farm_slug,
             "display_name": farm_name,
-            "state": "IA",
+            "state": existing_state or "IA",
             "country": "US",
             "default_crs": "EPSG:4326",
             "notes": "Canonical farm metadata",

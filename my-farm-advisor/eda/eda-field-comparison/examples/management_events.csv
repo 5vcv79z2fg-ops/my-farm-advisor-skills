@@ -1,0 +1,4 @@
+farm,year,crop,event,start_date,end_date,confidence,source
+Kanoona,2022,Wheat,grazing_lockup,2022-08-15,2022-08-31,month,"grower recall, 2026-11-20"
+Kanoona,2023,Wheat,early_sow,2023-03-15,2023-03-15,day,"grower, 2026-11-20"
+Kanoona,2023,Wheat,grazing_lockup,2023-08-15,2023-08-31,month,"grower recall, 2026-11-20"

@@ -96,8 +96,10 @@ exact published product matters; `clip_field` reports the URL it used.
 
 - `PROPERTY_URLS` — dict keyed by the seven contract names (CLAY, SILT, SAND,
   CEC, PHCALCIUMCHLORIDE, CARBON, BULKDENSITY), each with `units`, `doi`, and
-  `depths` → `0-5cm`/`5-15cm` entries carrying `cog` (canonical, keyed),
-  `dap` (keyless), `dap_collection`, `dap_file_id`.
+  `depths` → `0-5cm`, `5-15cm`, `15-30cm`, `30-60cm`, `60-100cm` entries
+  carrying `cog` (canonical, keyed), `dap` (keyless), `dap_collection`,
+  `dap_file_id`. The five slabs cover 0-100 cm; `100-200cm` exists in the
+  product but is deliberately not pinned.
 - `clip_field(bbox, out_path, prop, depth, api_key=None, source=None)` —
   `/vsicurl/` + `WarpedVRT` (output always EPSG:4326), tiled GeoTIFF out,
   returns the provenance dict: `source, property, code, attribute, depth,

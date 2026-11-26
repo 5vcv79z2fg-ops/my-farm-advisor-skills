@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import textwrap
@@ -54,6 +55,7 @@ from paths import (
     field_manifest_dir,
     field_report_path,
     field_soil_polygon_path,
+    field_summary_path,
     shared_cdl_preferred_full_composition_path,
 )
 from pipeline import (
@@ -152,34 +154,53 @@ def _canonical_field_root(field_slug: str | None) -> Path | None:
     return field_dir(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug)
 
 
+_NDVI_CARD_DEFAULTS: dict[str, tuple[str, str]] = {
+    "corn": ("Corn average NDVI", "ndvi_corn.png"),
+    "corn_peak_95": ("Corn 95th %ile peak NDVI", "ndvi_corn_peak_95.png"),
+    "soybean": ("Soybean average NDVI", "ndvi_soybean.png"),
+    "soybean_peak_95": ("Soybean 95th %ile peak NDVI", "ndvi_soybean_peak_95.png"),
+    "current_season_cumulative": (
+        "Cumulative NDVI by crop and year",
+        "ndvi_current_season_cumulative.png",
+    ),
+}
+
+
+def _ndvi_summary(field_slug: str | None) -> dict[str, dict]:
+    if not field_slug:
+        return {}
+    summary_path = field_summary_path(
+        _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_card_summary.json"
+    )
+    if not summary_path.exists():
+        return {}
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    cards = payload.get("cards", {})
+    return cards if isinstance(cards, dict) else {}
+
+
 def _cached_ndvi_assets(field_slug: str | None) -> dict[str, Path | None]:
     if field_slug is None:
-        return {
-            "corn": None,
-            "corn_peak_95": None,
-            "soybean": None,
-            "soybean_peak_95": None,
-            "current_season_cumulative": None,
-        }
+        return {key: None for key in _NDVI_CARD_DEFAULTS}
+    cards = _ndvi_summary(field_slug)
+    assets: dict[str, Path | None] = {}
+    for key, (_, default_filename) in _NDVI_CARD_DEFAULTS.items():
+        output_png = cards.get(key, {}).get("output_png")
+        filename = Path(str(output_png)).name if output_png else default_filename
+        assets[key] = field_feature_path(
+            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, filename
+        )
+    return assets
+
+
+def _cached_ndvi_titles(field_slug: str | None) -> dict[str, str]:
+    cards = _ndvi_summary(field_slug)
     return {
-        "corn": field_feature_path(
-            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_corn.png"
-        ),
-        "corn_peak_95": field_feature_path(
-            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_corn_peak_95.png"
-        ),
-        "soybean": field_feature_path(
-            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_soybean.png"
-        ),
-        "soybean_peak_95": field_feature_path(
-            _DEFAULT_GROWER, _DEFAULT_FARM, field_slug, "ndvi_soybean_peak_95.png"
-        ),
-        "current_season_cumulative": field_feature_path(
-            _DEFAULT_GROWER,
-            _DEFAULT_FARM,
-            field_slug,
-            "ndvi_current_season_cumulative.png",
-        ),
+        key: str(cards.get(key, {}).get("title") or default_label)
+        for key, (default_label, _) in _NDVI_CARD_DEFAULTS.items()
     }
 
 
@@ -228,19 +249,27 @@ def _soil_attributes_by_mukey(detail_df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(soil.groupby("mukey", as_index=False).agg(agg_spec))
 
 
-def _ndvi_panel(ax, image_path: Path | None, title: str) -> None:
-    ax.set_title(
-        title, fontsize=_PANEL_TITLE_SIZE, fontweight="bold", loc="left", pad=8
-    )
+def _ndvi_panel(
+    ax,
+    image_path: Path | None,
+    title: str,
+    *,
+    note: str | None = None,
+) -> None:
     if image_path is not None and image_path.exists():
+        # The rendered card already carries its honest title, so a panel title
+        # here would duplicate (and sometimes overlap) it.
         ax.imshow(mpimg.imread(image_path))
         ax.axis("off")
         return
+    ax.set_title(
+        title, fontsize=_PANEL_TITLE_SIZE, fontweight="bold", loc="left", pad=8
+    )
     ax.axis("off")
     ax.text(
         0.5,
         0.54,
-        "Cached NDVI card unavailable",
+        note or "Cached NDVI card unavailable",
         ha="center",
         va="center",
         fontsize=_PANEL_LABEL_SIZE,
@@ -248,14 +277,15 @@ def _ndvi_panel(ax, image_path: Path | None, title: str) -> None:
         color="#475569",
         transform=ax.transAxes,
     )
-    ax.text(
-        0.5,
-        0.34,
-        textwrap.fill(
-            "Refresh Sentinel-2/Landsat assets for this field to populate the reusable NDVI panel.",
-            width=28,
-        ),
-        ha="center",
+    if note is None:
+        ax.text(
+            0.5,
+            0.34,
+            textwrap.fill(
+                "Refresh Sentinel-2/Landsat assets for this field to populate the reusable NDVI panel.",
+                width=28,
+            ),
+            ha="center",
         va="center",
         fontsize=_BODY_TEXT_SIZE,
         color="#64748b",
@@ -457,6 +487,7 @@ def _render_field_poster(
     )
 
     ndvi_assets = _cached_ndvi_assets(field_slug)
+    ndvi_titles = _cached_ndvi_titles(field_slug)
     soil_map_assets = _cached_soil_map_assets(field_slug)
 
     _field_identity_card(
@@ -506,26 +537,63 @@ def _render_field_poster(
         fig.add_subplot(gs[3, 2:]), fw, title="Cumulative precipitation by day-of-year"
     )
 
-    _ndvi_panel(fig.add_subplot(gs[4, 0]), ndvi_assets["corn"], "Corn average NDVI")
-    _ndvi_panel(
-        fig.add_subplot(gs[4, 1]), ndvi_assets["soybean"], "Soybean average NDVI"
+    avg_duplicate = (
+        ndvi_assets["corn"] is not None
+        and ndvi_assets["soybean"] is not None
+        and ndvi_assets["corn"] == ndvi_assets["soybean"]
     )
+    _ndvi_panel(
+        fig.add_subplot(gs[4, 0]),
+        ndvi_assets["corn"],
+        ndvi_titles["corn"],
+        note=(
+            "All-vegetation card shown left; no corn-specific NDVI was available."
+            if avg_duplicate
+            else None
+        ),
+    )
+    if avg_duplicate:
+        _ndvi_panel(
+            fig.add_subplot(gs[4, 1]),
+            None,
+            "Soybean average NDVI (no crop-specific data)",
+            note="Same all-vegetation card as the corn panel; duplicate hidden.",
+        )
+    else:
+        _ndvi_panel(
+            fig.add_subplot(gs[4, 1]),
+            ndvi_assets["soybean"],
+            ndvi_titles["soybean"],
+        )
     _ndvi_panel(
         fig.add_subplot(gs[4, 2:]),
         ndvi_assets["current_season_cumulative"],
-        "Cumulative NDVI by crop and year",
+        ndvi_titles["current_season_cumulative"],
     )
 
+    peak_duplicate = (
+        ndvi_assets["corn_peak_95"] is not None
+        and ndvi_assets["soybean_peak_95"] is not None
+        and ndvi_assets["corn_peak_95"] == ndvi_assets["soybean_peak_95"]
+    )
     _ndvi_panel(
         fig.add_subplot(gs[5, 0]),
         ndvi_assets["corn_peak_95"],
-        "Corn 95th %ile peak NDVI",
+        ndvi_titles["corn_peak_95"],
     )
-    _ndvi_panel(
-        fig.add_subplot(gs[5, 1]),
-        ndvi_assets["soybean_peak_95"],
-        "Soybean 95th %ile peak NDVI",
-    )
+    if peak_duplicate:
+        _ndvi_panel(
+            fig.add_subplot(gs[5, 1]),
+            None,
+            "Soybean 95th %ile peak NDVI (no crop-specific data)",
+            note="Same all-vegetation peak card as the corn panel; duplicate hidden.",
+        )
+    else:
+        _ndvi_panel(
+            fig.add_subplot(gs[5, 1]),
+            ndvi_assets["soybean_peak_95"],
+            ndvi_titles["soybean_peak_95"],
+        )
     _ranking_card(fig.add_subplot(gs[5, 2:]), field_reporting_df, field_id)
 
     for ax in fig.axes:

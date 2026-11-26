@@ -1,0 +1,166 @@
+field_id,paddock_name,farm,region,year,status,land_use,use_type,area_ha_reported,area_ha_geom,area_ha_noncropped,crop,variety,variety_source,crop_group,crop_mix,mixed_flag,crop_source,geometry_source,prev_crop,rotation_pos,years_observed
+1169698,Back of Stewarts,Kanoona,Harden,2022,observed,cropping,grain,13.85,13.81,-0.04,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2022,,1,5
+1169698,Back of Stewarts,Kanoona,Harden,2023,observed,cropping,grain,13.85,13.81,-0.04,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2023,Pasture,2,5
+1169698,Back of Stewarts,Kanoona,Harden,2024,observed,cropping,grain,13.85,13.81,-0.04,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2024,Pasture,1,5
+1169698,Back of Stewarts,Kanoona,Harden,2025,observed,cropping,grain,13.85,13.81,-0.04,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Canola,1,5
+1169698,Back of Stewarts,Kanoona,Harden,2026,observed,cropping,grain,13.85,13.81,-0.04,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1153768,Big Lucerne,Kanoona,Harden,2022,observed,cropping,dual_purpose,20.86,20.86,0.0,Wheat,Hellfire,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153768,Big Lucerne,Kanoona,Harden,2023,observed,cropping,grain,20.86,20.86,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153768,Big Lucerne,Kanoona,Harden,2024,observed,cropping,grain,20.86,20.86,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153768,Big Lucerne,Kanoona,Harden,2025,observed,cropping,grain,20.86,20.86,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153768,Big Lucerne,Kanoona,Harden,2026,observed,cropping,grain,20.86,20.86,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153769,Big Rye,Kanoona,Harden,2022,observed,cropping,dual_purpose,28.73,28.73,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153769,Big Rye,Kanoona,Harden,2023,observed,cropping,grain,28.73,28.73,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153769,Big Rye,Kanoona,Harden,2024,observed,cropping,grain,28.73,28.73,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153769,Big Rye,Kanoona,Harden,2025,observed,cropping,grain,28.73,28.73,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153769,Big Rye,Kanoona,Harden,2026,observed,cropping,grain,28.73,28.73,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153770,Black Flat,Kanoona,Harden,2022,observed,cropping,grain,7.46,7.46,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153770,Black Flat,Kanoona,Harden,2023,observed,cropping,dual_purpose,7.46,7.46,0.0,Wheat,Illabo,grower_correction,Cereal,,False,shapefile,2023,Canola,1,5
+1153770,Black Flat,Kanoona,Harden,2024,observed,cropping,grain,7.46,7.46,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2024,Wheat,1,5
+1153770,Black Flat,Kanoona,Harden,2025,observed,cropping,grain,7.46,7.46,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Canola,1,5
+1153770,Black Flat,Kanoona,Harden,2026,observed,cropping,grain,7.46,7.46,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1153771,Copperbella,Kanoona,Harden,2022,observed,cropping,grain,29.41,29.37,-0.04,Pasture,Morgan,shapefile,Pasture,Pasture 15.79; Wheat 13.59,True,shapefile,2022,,1,5
+1153771,Copperbella,Kanoona,Harden,2023,observed,cropping,grain,29.41,29.37,-0.04,Canola,44Y30RR,shapefile,Oilseed,Canola 15.79; Wheat 13.59,True,shapefile,2023,Pasture,1,5
+1153771,Copperbella,Kanoona,Harden,2024,observed,cropping,grain,29.41,29.37,-0.04,Wheat,Vixen,shapefile,Cereal,Wheat 15.79; Canola 13.59,True,shapefile,2024,Canola,1,5
+1153771,Copperbella,Kanoona,Harden,2025,observed,cropping,grain,30.0,30.34,0.34,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Wheat,2,5
+1153771,Copperbella,Kanoona,Harden,2026,observed,cropping,grain,30.0,30.34,0.34,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1169689,Far Manning,Kanoona,Harden,2022,observed,cropping,grain,25.93,24.93,-1.0,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2022,,1,5
+1169689,Far Manning,Kanoona,Harden,2023,observed,cropping,grain,25.93,24.93,-1.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Pasture,1,5
+1169689,Far Manning,Kanoona,Harden,2024,observed,cropping,grain,25.93,24.93,-1.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1169689,Far Manning,Kanoona,Harden,2025,observed,cropping,grain,25.93,24.93,-1.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1169689,Far Manning,Kanoona,Harden,2026,observed,cropping,grain,25.93,24.93,-1.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153772,First Manning,Kanoona,Harden,2022,observed,cropping,grain,41.74,41.74,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153772,First Manning,Kanoona,Harden,2023,observed,cropping,dual_purpose,41.74,41.74,0.0,Wheat,Illabo,grower_correction,Cereal,,False,shapefile,2023,Canola,1,5
+1153772,First Manning,Kanoona,Harden,2024,observed,cropping,grain,41.74,41.74,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Wheat,2,5
+1153772,First Manning,Kanoona,Harden,2025,observed,cropping,grain,41.74,41.74,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153772,First Manning,Kanoona,Harden,2026,observed,cropping,grain,41.74,41.74,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153774,Hill 50,Kanoona,Harden,2022,observed,cropping,dual_purpose,18.76,18.76,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153774,Hill 50,Kanoona,Harden,2023,observed,cropping,grain,18.76,18.76,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153774,Hill 50,Kanoona,Harden,2024,observed,cropping,grain,18.76,18.76,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153774,Hill 50,Kanoona,Harden,2025,observed,cropping,grain,18.76,18.76,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153774,Hill 50,Kanoona,Harden,2026,observed,cropping,grain,18.76,18.76,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153775,Hill Tank,Kanoona,Harden,2022,observed,cropping,dual_purpose,22.35,22.35,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153775,Hill Tank,Kanoona,Harden,2023,observed,cropping,grain,22.35,22.35,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153775,Hill Tank,Kanoona,Harden,2024,observed,cropping,grain,22.35,22.35,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153775,Hill Tank,Kanoona,Harden,2025,observed,cropping,grain,22.35,22.35,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153775,Hill Tank,Kanoona,Harden,2026,observed,cropping,grain,22.35,22.35,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153777,Lane Lucerne,Kanoona,Harden,2022,observed,cropping,grain,32.0,31.98,-0.02,Canola,44Y30RR,shapefile,Oilseed,Canola 26.19; Wheat 5.81,True,shapefile,2022,,1,5
+1153777,Lane Lucerne,Kanoona,Harden,2023,observed,cropping,dual_purpose,32.0,31.98,-0.02,Wheat,Illabo,grower_correction,Cereal,Wheat 26.19; Canola 5.81,True,shapefile,2023,Canola,1,5
+1153777,Lane Lucerne,Kanoona,Harden,2024,observed,cropping,grain,32.0,31.98,-0.02,Canola,44Y30RR,shapefile,Oilseed,Canola 26.19; Wheat 5.81,True,shapefile,2024,Wheat,1,5
+1153777,Lane Lucerne,Kanoona,Harden,2025,observed,cropping,grain,32.0,32.01,0.01,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Canola,1,5
+1153777,Lane Lucerne,Kanoona,Harden,2026,observed,cropping,grain,32.0,32.01,0.01,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1153778,Little Hill,Kanoona,Harden,2022,observed,cropping,grain,25.28,25.28,0.0,Pasture,Morgan,shapefile,Pasture,,False,shapefile,2022,,1,5
+1153778,Little Hill,Kanoona,Harden,2023,observed,cropping,grain,25.28,25.28,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Pasture,1,5
+1153778,Little Hill,Kanoona,Harden,2024,observed,cropping,grain,25.28,25.28,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153778,Little Hill,Kanoona,Harden,2025,observed,cropping,grain,25.28,25.28,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153778,Little Hill,Kanoona,Harden,2026,observed,cropping,grain,25.28,25.28,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153779,Oat Paddock,Kanoona,Harden,2022,observed,cropping,dual_purpose,20.05,20.03,-0.02,Wheat,Vixen,shapefile,Cereal,Wheat 12.73; Pasture 7.30,True,shapefile,2022,,1,5
+1153779,Oat Paddock,Kanoona,Harden,2023,observed,cropping,grain,20.05,20.03,-0.02,Canola,44Y30RR,shapefile,Oilseed,Canola 12.73; Pasture 7.30,True,shapefile,2023,Wheat,1,5
+1153779,Oat Paddock,Kanoona,Harden,2024,observed,cropping,grain,20.05,20.03,-0.02,Wheat,Vixen,shapefile,Cereal,Wheat 12.73; Canola 7.30,True,shapefile,2024,Canola,1,5
+1153779,Oat Paddock,Kanoona,Harden,2025,observed,cropping,grain,20.0,20.31,0.31,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Wheat,2,5
+1153779,Oat Paddock,Kanoona,Harden,2026,observed,cropping,grain,20.0,20.31,0.31,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1153780,Pump Lane,Kanoona,Harden,2022,observed,permanent_pasture,grain,6.98,6.98,0.0,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2022,,1,5
+1153780,Pump Lane,Kanoona,Harden,2023,observed,permanent_pasture,grain,6.98,6.98,0.0,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2023,Pasture,2,5
+1153780,Pump Lane,Kanoona,Harden,2024,observed,permanent_pasture,grain,6.98,6.98,0.0,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2024,Pasture,3,5
+1153780,Pump Lane,Kanoona,Harden,2025,observed,permanent_pasture,grain,6.98,6.98,0.0,Pasture,Annual Pasture,grower_confirmed,Pasture,,False,grower_confirmed,2024,Pasture,4,5
+1153780,Pump Lane,Kanoona,Harden,2026,observed,permanent_pasture,grain,6.98,6.98,0.0,Pasture,Annual Pasture,grower_confirmed,Pasture,,False,grower_confirmed,2026,Pasture,5,5
+1153781,Sheepyard,Kanoona,Harden,2022,observed,cropping,grain,39.99,39.89,-0.1,Pasture,Morgan,shapefile,Pasture,,False,shapefile,2022,,1,5
+1153781,Sheepyard,Kanoona,Harden,2023,observed,cropping,grain,39.99,39.89,-0.1,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Pasture,1,5
+1153781,Sheepyard,Kanoona,Harden,2024,observed,cropping,grain,39.99,39.89,-0.1,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153781,Sheepyard,Kanoona,Harden,2025,observed,cropping,grain,39.99,39.89,-0.1,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153781,Sheepyard,Kanoona,Harden,2026,observed,cropping,grain,39.99,39.89,-0.1,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153782,Smiths,Kanoona,Harden,2022,observed,cropping,grain,38.38,38.38,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153782,Smiths,Kanoona,Harden,2023,observed,cropping,dual_purpose,38.38,38.38,0.0,Wheat,Illabo,grower_correction,Cereal,,False,shapefile,2023,Canola,1,5
+1153782,Smiths,Kanoona,Harden,2024,observed,cropping,grain,38.38,38.38,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2024,Wheat,1,5
+1153782,Smiths,Kanoona,Harden,2025,observed,cropping,grain,38.38,38.38,0.0,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Canola,1,5
+1153782,Smiths,Kanoona,Harden,2026,observed,cropping,grain,38.38,38.38,0.0,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1169697,Stewarts,Kanoona,Harden,2022,observed,cropping,grain,12.15,14.35,2.2,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2022,,1,5
+1169697,Stewarts,Kanoona,Harden,2023,observed,cropping,grain,12.15,14.35,2.2,Pasture,Annual Pasture,shapefile,Pasture,,False,shapefile,2023,Pasture,2,5
+1169697,Stewarts,Kanoona,Harden,2024,observed,cropping,grain,12.15,14.35,2.2,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2024,Pasture,1,5
+1169697,Stewarts,Kanoona,Harden,2025,observed,cropping,grain,12.15,14.35,2.2,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Canola,1,5
+1169697,Stewarts,Kanoona,Harden,2026,observed,cropping,grain,12.15,14.35,2.2,Canola,PY525G,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,5
+1559361,Brentwood North,Brentwood (lease),Lease country,2022,not_managed,cropping,,,,,,,,,,False,,,,,3
+1559361,Brentwood North,Brentwood (lease),Lease country,2023,not_managed,cropping,,,,,,,,,,False,,,,,3
+1559361,Brentwood North,Brentwood (lease),Lease country,2024,observed,cropping,grain,170.83,170.83,0.0,Wheat,Calibre,shapefile,Cereal,,False,shapefile,2024,,1,3
+1559361,Brentwood North,Brentwood (lease),Lease country,2025,observed,cropping,grain,170.83,170.83,0.0,Wheat,RockStar,shapefile,Cereal,,False,shapefile,2025,Wheat,2,3
+1559361,Brentwood North,Brentwood (lease),Lease country,2026,observed,cropping,grain,170.83,170.83,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,3
+1559360,Brentwood South,Brentwood (lease),Lease country,2022,not_managed,cropping,,,,,,,,,,False,,,,,3
+1559360,Brentwood South,Brentwood (lease),Lease country,2023,not_managed,cropping,,,,,,,,,,False,,,,,3
+1559360,Brentwood South,Brentwood (lease),Lease country,2024,observed,cropping,grain,478.56,478.56,0.0,Wheat,Calibre,shapefile,Cereal,,False,shapefile,2024,,1,3
+1559360,Brentwood South,Brentwood (lease),Lease country,2025,observed,cropping,grain,478.56,478.56,0.0,Wheat,RockStar,shapefile,Cereal,,False,shapefile,2025,Wheat,2,3
+1559360,Brentwood South,Brentwood (lease),Lease country,2026,observed,cropping,grain,478.56,478.56,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2026,Wheat,1,3
+1169659,Rio Chanel,Rio (lease),Lease country,2022,observed,cropping,grain,70.18,70.06,-0.13,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,4
+1169659,Rio Chanel,Rio (lease),Lease country,2023,observed,cropping,grain,70.18,70.06,-0.13,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Canola,2,4
+1169659,Rio Chanel,Rio (lease),Lease country,2024,observed,cropping,grain,70.18,70.06,-0.13,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,4
+1169659,Rio Chanel,Rio (lease),Lease country,2025,observed,cropping,grain,70.18,70.06,-0.13,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Wheat,2,4
+1169659,Rio Chanel,Rio (lease),Lease country,2026,not_managed,cropping,,,,,,,,,,False,,,,,4
+1169660,Rio North,Rio (lease),Lease country,2022,observed,cropping,grain,483.49,462.42,-21.07,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2022,,1,4
+1169660,Rio North,Rio (lease),Lease country,2023,observed,cropping,grain,483.49,462.42,-21.07,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2023,Narrow Leaf Lupin,1,4
+1169660,Rio North,Rio (lease),Lease country,2024,observed,cropping,grain,483.49,462.42,-21.07,Barley,La Trobe,shapefile,Cereal,,False,shapefile,2024,Wheat,1,4
+1169660,Rio North,Rio (lease),Lease country,2025,observed,cropping,grain,483.49,462.42,-21.07,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Barley,1,4
+1169660,Rio North,Rio (lease),Lease country,2026,not_managed,cropping,,,,,,,,,,False,,,,,4
+1169641,Rio South,Rio (lease),Lease country,2022,observed,cropping,grain,284.38,376.5,92.12,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,4
+1169641,Rio South,Rio (lease),Lease country,2023,observed,cropping,grain,284.38,376.5,92.12,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Canola,2,4
+1169641,Rio South,Rio (lease),Lease country,2024,observed,cropping,grain,284.38,376.5,92.12,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,4
+1169641,Rio South,Rio (lease),Lease country,2025,observed,cropping,grain,284.38,376.5,92.12,Wheat,Illabo,shapefile,Cereal,,False,shapefile,2025,Wheat,2,4
+1169641,Rio South,Rio (lease),Lease country,2026,not_managed,cropping,,,,,,,,,,False,,,,,4
+1616828,Woodlands,Woodlands (lease),Lease country,2022,not_managed,cropping,,,,,,,,,,False,,,,,2
+1616828,Woodlands,Woodlands (lease),Lease country,2023,not_managed,cropping,,,,,,,,,,False,,,,,2
+1616828,Woodlands,Woodlands (lease),Lease country,2024,not_managed,cropping,,,,,,,,,,False,,,,,2
+1616828,Woodlands,Woodlands (lease),Lease country,2025,observed,cropping,grain,327.0,326.83,-0.17,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2025,,1,2
+1616828,Woodlands,Woodlands (lease),Lease country,2026,observed,cropping,grain,327.0,326.83,-0.17,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2026,Narrow Leaf Lupin,1,2
+1153803,C1,Caroleese,Trungley Hall,2022,observed,cropping,grain,57.59,57.59,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153803,C1,Caroleese,Trungley Hall,2023,observed,cropping,grain,57.59,57.59,0.0,Barley,La Trobe,shapefile,Cereal,,False,shapefile,2023,Wheat,1,5
+1153803,C1,Caroleese,Trungley Hall,2024,observed,cropping,grain,57.59,57.59,0.0,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2024,Barley,1,5
+1153803,C1,Caroleese,Trungley Hall,2025,observed,cropping,grain,57.59,57.59,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Narrow Leaf Lupin,1,5
+1153803,C1,Caroleese,Trungley Hall,2026,observed,cropping,grain,57.59,57.59,0.0,Wheat,Sunmaster,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1169569,C2,Caroleese,Trungley Hall,2022,observed,cropping,grain,88.43,88.21,-0.22,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1169569,C2,Caroleese,Trungley Hall,2023,observed,cropping,grain,88.43,88.21,-0.22,Barley,La Trobe,shapefile,Cereal,,False,shapefile,2023,Wheat,1,5
+1169569,C2,Caroleese,Trungley Hall,2024,observed,cropping,grain,88.43,88.21,-0.22,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2024,Barley,1,5
+1169569,C2,Caroleese,Trungley Hall,2025,observed,cropping,grain,88.43,88.21,-0.22,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Narrow Leaf Lupin,1,5
+1169569,C2,Caroleese,Trungley Hall,2026,observed,cropping,grain,88.43,88.21,-0.22,Wheat,Sunmaster,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153804,C3,Caroleese,Trungley Hall,2022,observed,cropping,grain,24.42,24.42,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153804,C3,Caroleese,Trungley Hall,2023,observed,cropping,grain,24.42,24.42,0.0,Barley,La Trobe,shapefile,Cereal,,False,shapefile,2023,Wheat,1,5
+1153804,C3,Caroleese,Trungley Hall,2024,observed,cropping,grain,24.42,24.42,0.0,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2024,Barley,1,5
+1153804,C3,Caroleese,Trungley Hall,2025,observed,cropping,grain,24.42,24.42,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Narrow Leaf Lupin,1,5
+1153804,C3,Caroleese,Trungley Hall,2026,observed,cropping,grain,24.42,24.42,0.0,Wheat,Sunmaster,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1169571,North Gully,Caroleese,Trungley Hall,2022,observed,cropping,grain,128.14,122.84,-5.3,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2022,,1,5
+1169571,North Gully,Caroleese,Trungley Hall,2023,observed,cropping,grain,128.14,122.84,-5.3,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Narrow Leaf Lupin,1,5
+1169571,North Gully,Caroleese,Trungley Hall,2024,observed,cropping,grain,128.14,122.84,-5.3,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1169571,North Gully,Caroleese,Trungley Hall,2025,observed,cropping,grain,128.14,122.84,-5.3,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1169571,North Gully,Caroleese,Trungley Hall,2026,observed,cropping,grain,128.14,122.84,-5.3,Wheat,Sunmaster,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153805,South Gully,Caroleese,Trungley Hall,2022,observed,cropping,grain,58.5,58.5,0.0,Narrow Leaf Lupin,PBA Bateman,shapefile,Legume,,False,shapefile,2022,,1,5
+1153805,South Gully,Caroleese,Trungley Hall,2023,observed,cropping,grain,58.5,58.5,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Narrow Leaf Lupin,1,5
+1153805,South Gully,Caroleese,Trungley Hall,2024,observed,cropping,grain,58.5,58.5,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153805,South Gully,Caroleese,Trungley Hall,2025,observed,cropping,grain,58.5,58.5,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153805,South Gully,Caroleese,Trungley Hall,2026,observed,cropping,grain,58.5,58.5,0.0,Wheat,Sunmaster,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,71.45,71.45,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,71.45,71.45,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2023,Canola,1,5
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,71.45,71.45,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Wheat,2,5
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,71.45,71.45,0.0,Barley,Minotaur,shapefile,Cereal,,False,shapefile,2025,Wheat,1,5
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,71.45,71.45,0.0,Faba/Broad/Field Bean,PBA Samira,shapefile,Legume,,False,shapefile,2026,Barley,1,5
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,49.5,49.5,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,49.5,49.5,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2023,Canola,1,5
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,49.5,49.5,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Wheat,2,5
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,49.5,49.5,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,49.5,49.5,0.0,Wheat,Sundancer,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,49.15,49.15,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,49.15,49.15,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2023,Canola,1,5
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,49.15,49.15,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Wheat,2,5
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,49.15,49.15,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,49.15,49.15,0.0,Wheat,Sundancer,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,59.23,59.23,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2022,,1,5
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,59.23,59.23,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2023,Canola,1,5
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,59.23,59.23,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Wheat,2,5
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,59.23,59.23,0.0,Canola,44Y94CL,shapefile,Oilseed,,False,shapefile,2025,Wheat,1,5
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,59.23,59.23,0.0,Wheat,Sundancer,shapefile,Cereal,,False,shapefile,2026,Canola,1,5
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,65.38,65.38,0.0,Wheat,Scepter,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,65.38,65.38,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,65.38,65.38,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,65.38,65.38,0.0,Barley,Minotaur,shapefile,Cereal,,False,shapefile,2025,Wheat,1,5
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,65.38,65.38,0.0,Faba/Broad/Field Bean,PBA Samira,shapefile,Legume,,False,shapefile,2026,Barley,1,5
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2022,observed,cropping,grain,54.76,54.76,0.0,Wheat,Scepter,shapefile,Cereal,,False,shapefile,2022,,1,5
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2023,observed,cropping,grain,54.76,54.76,0.0,Canola,44Y30RR,shapefile,Oilseed,,False,shapefile,2023,Wheat,1,5
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2024,observed,cropping,grain,54.76,54.76,0.0,Wheat,Vixen,shapefile,Cereal,,False,shapefile,2024,Canola,1,5
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2025,observed,cropping,grain,54.76,54.76,0.0,Barley,Minotaur,shapefile,Cereal,,False,shapefile,2025,Wheat,1,5
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2026,observed,cropping,grain,54.76,54.76,0.0,Faba/Broad/Field Bean,PBA Samira,shapefile,Legume,,False,shapefile,2026,Barley,1,5

@@ -23,14 +23,24 @@ def prepare_weather_reporting(
 def summarize_weather_variability(weather: pd.DataFrame) -> pd.DataFrame:
     df = prepare_weather_reporting(weather)
     grouped = df.groupby("field_id")
-    return grouped.agg(
+    summary = grouped.agg(
         avg_temp_c=("T2M", "mean"),
         avg_precip_mm=("PRECTOTCORR", "mean"),
-        annual_precip_mm=("PRECTOTCORR", "sum"),
         avg_gdd=("gdd", "mean"),
         max_gdd_cumulative=("gdd_cumulative", "max"),
         years=("year", "nunique"),
-    ).reset_index()
+    )
+    # PRECTOTCORR is daily precipitation in mm/day. Summing every row in a
+    # multi-year table yields the whole-period total, not an annual figure, so
+    # sum within each year first and then average those yearly totals.
+    annual_precip = (
+        df.groupby(["field_id", "year"], as_index=False)["PRECTOTCORR"]
+        .sum()
+        .groupby("field_id")["PRECTOTCORR"]
+        .mean()
+    )
+    summary["annual_precip_mm"] = annual_precip
+    return summary.reset_index()
 
 
 def _frost_markers(df: pd.DataFrame) -> tuple[float | None, float | None]:
@@ -102,9 +112,12 @@ def plot_temperature_doy_overlay(
 
 
 def plot_gdd_doy_overlay(
-    ax, weather: pd.DataFrame, title: str = "Cumulative GDD by day-of-year"
+    ax,
+    weather: pd.DataFrame,
+    title: str = "Cumulative GDD by day-of-year",
+    base_temp_c: float = 10.0,
 ):
-    df = prepare_weather_reporting(weather)
+    df = prepare_weather_reporting(weather, base_temp_c=base_temp_c)
     for year, group in df.groupby("year"):
         # Add NaN after each year to prevent line connection to next year
         group_plot = pd.concat(
@@ -123,7 +136,7 @@ def plot_gdd_doy_overlay(
     spring_doy, fall_doy = _frost_markers(df)
     ax.set_title(title, fontsize=12, fontweight="bold")
     ax.set_xlabel("Day of year")
-    ax.set_ylabel("GDD base 10 C")
+    ax.set_ylabel(f"Cumulative GDD base {base_temp_c:g} °C")
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=7, ncol=3)
     _annotate_frost_lines(ax, spring_doy, fall_doy)

@@ -178,6 +178,14 @@ def _output_paths(
                 f"ndvi_year_{year}_composite.tif",
             )
         )
+    outputs.append(
+        field_feature_path(
+            _DEFAULT_GROWER,
+            _DEFAULT_FARM,
+            field_slug,
+            "ndvi_all_years_rollup.tif",
+        )
+    )
     crops = {crop_lookup.get((field_id, year), "") for year in yearly_inputs}
     if "Corn" in crops:
         outputs.append(
@@ -265,6 +273,27 @@ def main() -> None:
                     "scene_count": len(raster_paths),
                     "composite_tif": str(composite_path.relative_to(_REPO)),
                 }
+            )
+
+        composite_paths = [
+            field_feature_path(
+                _DEFAULT_GROWER,
+                _DEFAULT_FARM,
+                field_slug,
+                f"ndvi_year_{year}_composite.tif",
+            )
+            for year in sorted(yearly_inputs)
+            if yearly_inputs[year]
+        ]
+        if composite_paths:
+            _write_mean_raster(
+                field_feature_path(
+                    _DEFAULT_GROWER,
+                    _DEFAULT_FARM,
+                    field_slug,
+                    "ndvi_all_years_rollup.tif",
+                ),
+                composite_paths,
             )
 
         for crop_name, paths in yearly_rollups.items():

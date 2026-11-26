@@ -1,0 +1,166 @@
+field_id,paddock_name,farm,region,year,schema,status,geometry_source,area_ha_geom,area_ha_reported,area_ha_noncropped,area_delta_pct,compared_to_year,symdiff_pct,hausdorff_m,centroid_shift_m,valid,parts,vertices
+1169698,Back of Stewarts,Kanoona,Harden,2022,A,observed,2022,13.81,13.85,-0.04,-0.26,,,,,True,1.0,43.0
+1169698,Back of Stewarts,Kanoona,Harden,2023,A,observed,2023,13.81,13.85,-0.04,-0.26,2022,0.0,0.0,0.0,True,1.0,43.0
+1169698,Back of Stewarts,Kanoona,Harden,2024,A,observed,2024,13.81,13.85,-0.04,-0.26,2023,0.0,0.0,0.0,True,1.0,43.0
+1169698,Back of Stewarts,Kanoona,Harden,2025,B,observed,2025,13.81,13.85,-0.04,-0.26,2024,0.0,0.0,0.0,True,1.0,43.0
+1169698,Back of Stewarts,Kanoona,Harden,2026,B,observed,2026,13.81,13.85,-0.04,-0.26,2025,0.0,0.0,0.0,True,1.0,43.0
+1153768,Big Lucerne,Kanoona,Harden,2022,A,observed,2022,20.86,20.86,-0.0,-0.0,,,,,True,1.0,58.0
+1153768,Big Lucerne,Kanoona,Harden,2023,A,observed,2023,20.86,20.86,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,58.0
+1153768,Big Lucerne,Kanoona,Harden,2024,A,observed,2024,20.86,20.86,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,58.0
+1153768,Big Lucerne,Kanoona,Harden,2025,B,observed,2025,20.86,20.86,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,58.0
+1153768,Big Lucerne,Kanoona,Harden,2026,B,observed,2026,20.86,20.86,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,58.0
+1153769,Big Rye,Kanoona,Harden,2022,A,observed,2022,28.73,28.73,-0.0,-0.01,,,,,True,1.0,170.0
+1153769,Big Rye,Kanoona,Harden,2023,A,observed,2023,28.73,28.73,-0.0,-0.01,2022,0.0,0.0,0.0,True,1.0,170.0
+1153769,Big Rye,Kanoona,Harden,2024,A,observed,2024,28.73,28.73,-0.0,-0.01,2023,0.0,0.0,0.0,True,1.0,170.0
+1153769,Big Rye,Kanoona,Harden,2025,B,observed,2025,28.73,28.73,-0.0,-0.01,2024,0.0,0.0,0.0,True,1.0,170.0
+1153769,Big Rye,Kanoona,Harden,2026,B,observed,2026,28.73,28.73,-0.0,-0.01,2025,0.0,0.0,0.0,True,1.0,170.0
+1153770,Black Flat,Kanoona,Harden,2022,A,observed,2022,7.46,7.46,0.0,0.04,,,,,True,4.0,120.0
+1153770,Black Flat,Kanoona,Harden,2023,A,observed,2023,7.46,7.46,0.0,0.04,2022,0.0,0.0,0.0,True,4.0,120.0
+1153770,Black Flat,Kanoona,Harden,2024,A,observed,2024,7.46,7.46,0.0,0.04,2023,0.0,0.0,0.0,True,4.0,120.0
+1153770,Black Flat,Kanoona,Harden,2025,B,observed,2025,7.46,7.46,0.0,0.04,2024,0.0,0.0,0.0,True,4.0,120.0
+1153770,Black Flat,Kanoona,Harden,2026,B,observed,2026,7.46,7.46,0.0,0.04,2025,0.0,0.0,0.0,True,4.0,120.0
+1153771,Copperbella,Kanoona,Harden,2022,A,observed,2022,29.37,29.41,-0.04,-0.13,,,,,True,2.0,684.0
+1153771,Copperbella,Kanoona,Harden,2023,A,observed,2023,29.37,29.41,-0.04,-0.13,2022,0.0,0.0,0.0,True,2.0,684.0
+1153771,Copperbella,Kanoona,Harden,2024,A,observed,2024,29.37,29.41,-0.04,-0.13,2023,0.0,0.0,0.0,True,2.0,684.0
+1153771,Copperbella,Kanoona,Harden,2025,B,observed,2025,30.34,30.0,0.34,1.14,2024,5.8972,115.27,8.33,True,2.0,112.0
+1153771,Copperbella,Kanoona,Harden,2026,B,observed,2026,30.34,30.0,0.34,1.14,2025,0.0,0.0,0.0,True,2.0,112.0
+1169689,Far Manning,Kanoona,Harden,2022,A,observed,2022,24.93,25.93,-1.0,-3.86,,,,,True,5.0,67.0
+1169689,Far Manning,Kanoona,Harden,2023,A,observed,2023,24.93,25.93,-1.0,-3.86,2022,0.0,0.0,0.0,True,5.0,67.0
+1169689,Far Manning,Kanoona,Harden,2024,A,observed,2024,24.93,25.93,-1.0,-3.86,2023,0.0,0.0,0.0,True,5.0,67.0
+1169689,Far Manning,Kanoona,Harden,2025,B,observed,2025,24.93,25.93,-1.0,-3.86,2024,0.0,0.0,0.0,True,5.0,67.0
+1169689,Far Manning,Kanoona,Harden,2026,B,observed,2026,24.93,25.93,-1.0,-3.86,2025,0.0,0.0,0.0,True,5.0,67.0
+1153772,First Manning,Kanoona,Harden,2022,A,observed,2022,41.74,41.74,-0.0,-0.01,,,,,True,1.0,161.0
+1153772,First Manning,Kanoona,Harden,2023,A,observed,2023,41.74,41.74,-0.0,-0.01,2022,0.0,0.0,0.0,True,1.0,161.0
+1153772,First Manning,Kanoona,Harden,2024,A,observed,2024,41.74,41.74,-0.0,-0.01,2023,0.0,0.0,0.0,True,1.0,161.0
+1153772,First Manning,Kanoona,Harden,2025,B,observed,2025,41.74,41.74,-0.0,-0.01,2024,0.0,0.0,0.0,True,1.0,161.0
+1153772,First Manning,Kanoona,Harden,2026,B,observed,2026,41.74,41.74,-0.0,-0.01,2025,0.0,0.0,0.0,True,1.0,161.0
+1153774,Hill 50,Kanoona,Harden,2022,A,observed,2022,18.76,18.76,-0.0,-0.0,,,,,True,1.0,79.0
+1153774,Hill 50,Kanoona,Harden,2023,A,observed,2023,18.76,18.76,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,79.0
+1153774,Hill 50,Kanoona,Harden,2024,A,observed,2024,18.76,18.76,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,79.0
+1153774,Hill 50,Kanoona,Harden,2025,B,observed,2025,18.76,18.76,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,79.0
+1153774,Hill 50,Kanoona,Harden,2026,B,observed,2026,18.76,18.76,0.0,0.02,2025,0.0,0.0,0.0,True,1.0,79.0
+1153775,Hill Tank,Kanoona,Harden,2022,A,observed,2022,22.35,22.35,0.0,0.01,,,,,True,1.0,143.0
+1153775,Hill Tank,Kanoona,Harden,2023,A,observed,2023,22.35,22.35,0.0,0.01,2022,0.0,0.0,0.0,True,1.0,143.0
+1153775,Hill Tank,Kanoona,Harden,2024,A,observed,2024,22.35,22.35,0.0,0.01,2023,0.0,0.0,0.0,True,1.0,143.0
+1153775,Hill Tank,Kanoona,Harden,2025,B,observed,2025,22.35,22.35,0.0,0.01,2024,0.0,0.0,0.0,True,1.0,143.0
+1153775,Hill Tank,Kanoona,Harden,2026,B,observed,2026,22.35,22.35,0.0,0.01,2025,0.0,0.0,0.0,True,1.0,143.0
+1153777,Lane Lucerne,Kanoona,Harden,2022,A,observed,2022,31.98,32.0,-0.02,-0.06,,,,,True,2.0,207.0
+1153777,Lane Lucerne,Kanoona,Harden,2023,A,observed,2023,31.98,32.0,-0.02,-0.06,2022,0.0,0.0,0.0,True,2.0,207.0
+1153777,Lane Lucerne,Kanoona,Harden,2024,A,observed,2024,31.98,32.0,-0.02,-0.06,2023,0.0,0.0,0.0,True,2.0,207.0
+1153777,Lane Lucerne,Kanoona,Harden,2025,B,observed,2025,32.01,32.0,0.01,0.03,2024,1.1023,160.56,0.21,True,1.0,123.0
+1153777,Lane Lucerne,Kanoona,Harden,2026,B,observed,2026,32.01,32.0,0.01,0.03,2025,0.0,0.0,0.0,True,1.0,123.0
+1153778,Little Hill,Kanoona,Harden,2022,A,observed,2022,25.28,25.28,-0.0,-0.01,,,,,True,1.0,162.0
+1153778,Little Hill,Kanoona,Harden,2023,A,observed,2023,25.28,25.28,-0.0,-0.01,2022,0.0,0.0,0.0,True,1.0,162.0
+1153778,Little Hill,Kanoona,Harden,2024,A,observed,2024,25.28,25.28,-0.0,-0.01,2023,0.0,0.0,0.0,True,1.0,162.0
+1153778,Little Hill,Kanoona,Harden,2025,B,observed,2025,25.28,25.28,-0.0,-0.01,2024,0.0,0.0,0.0,True,1.0,162.0
+1153778,Little Hill,Kanoona,Harden,2026,B,observed,2026,25.28,25.28,-0.0,-0.01,2025,0.0,0.0,0.0,True,1.0,162.0
+1153779,Oat Paddock,Kanoona,Harden,2022,A,observed,2022,20.03,20.05,-0.02,-0.08,,,,,True,2.0,100.0
+1153779,Oat Paddock,Kanoona,Harden,2023,A,observed,2023,20.03,20.05,-0.02,-0.08,2022,0.0,0.0,0.0,True,2.0,100.0
+1153779,Oat Paddock,Kanoona,Harden,2024,A,observed,2024,20.03,20.05,-0.02,-0.08,2023,0.0,0.0,0.0,True,2.0,100.0
+1153779,Oat Paddock,Kanoona,Harden,2025,B,observed,2025,20.31,20.0,0.31,1.55,2024,3.2524,111.7,0.31,True,2.0,66.0
+1153779,Oat Paddock,Kanoona,Harden,2026,B,observed,2026,20.31,20.0,0.31,1.55,2025,0.0,0.0,0.0,True,2.0,66.0
+1153780,Pump Lane,Kanoona,Harden,2022,A,observed,2022,6.98,6.98,-0.0,-0.06,,,,,True,1.0,72.0
+1153780,Pump Lane,Kanoona,Harden,2023,A,observed,2023,6.98,6.98,-0.0,-0.06,2022,0.0,0.0,0.0,True,1.0,72.0
+1153780,Pump Lane,Kanoona,Harden,2024,A,observed,2024,6.98,6.98,-0.0,-0.06,2023,0.0,0.0,0.0,True,1.0,72.0
+1153780,Pump Lane,Kanoona,Harden,2025,B,observed,2024,6.98,6.98,-0.0,-0.06,2024,0.0,0.0,0.0,True,1.0,72.0
+1153780,Pump Lane,Kanoona,Harden,2026,B,observed,2026,6.98,6.98,-0.0,-0.06,2025,0.0,0.0,0.0,True,1.0,72.0
+1153781,Sheepyard,Kanoona,Harden,2022,A,observed,2022,39.89,39.99,-0.1,-0.24,,,,,True,1.0,174.0
+1153781,Sheepyard,Kanoona,Harden,2023,A,observed,2023,39.89,39.99,-0.1,-0.24,2022,0.0,0.0,0.0,True,1.0,174.0
+1153781,Sheepyard,Kanoona,Harden,2024,A,observed,2024,39.89,39.99,-0.1,-0.24,2023,0.0,0.0,0.0,True,1.0,174.0
+1153781,Sheepyard,Kanoona,Harden,2025,B,observed,2025,39.89,39.99,-0.1,-0.24,2024,0.0,0.0,0.0,True,1.0,174.0
+1153781,Sheepyard,Kanoona,Harden,2026,B,observed,2026,39.89,39.99,-0.1,-0.24,2025,0.0,0.0,0.0,True,1.0,174.0
+1153782,Smiths,Kanoona,Harden,2022,A,observed,2022,38.38,38.38,-0.0,-0.0,,,,,True,1.0,179.0
+1153782,Smiths,Kanoona,Harden,2023,A,observed,2023,38.38,38.38,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,179.0
+1153782,Smiths,Kanoona,Harden,2024,A,observed,2024,38.38,38.38,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,179.0
+1153782,Smiths,Kanoona,Harden,2025,B,observed,2025,38.38,38.38,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,179.0
+1153782,Smiths,Kanoona,Harden,2026,B,observed,2026,38.38,38.38,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,179.0
+1169697,Stewarts,Kanoona,Harden,2022,A,observed,2022,14.35,12.15,2.2,18.13,,,,,True,4.0,91.0
+1169697,Stewarts,Kanoona,Harden,2023,A,observed,2023,14.35,12.15,2.2,18.13,2022,0.0,0.0,0.0,True,4.0,91.0
+1169697,Stewarts,Kanoona,Harden,2024,A,observed,2024,14.35,12.15,2.2,18.13,2023,0.0,0.0,0.0,True,4.0,91.0
+1169697,Stewarts,Kanoona,Harden,2025,B,observed,2025,14.35,12.15,2.2,18.13,2024,0.0,0.0,0.0,True,4.0,91.0
+1169697,Stewarts,Kanoona,Harden,2026,B,observed,2026,14.35,12.15,2.2,18.13,2025,0.0,0.0,0.0,True,4.0,91.0
+1559361,Brentwood North,Brentwood (lease),Lease country,2022,A,not_managed,,,,,,,,,,,,
+1559361,Brentwood North,Brentwood (lease),Lease country,2023,A,not_managed,,,,,,,,,,,,
+1559361,Brentwood North,Brentwood (lease),Lease country,2024,A,observed,2024,170.83,170.83,0.0,0.0,,,,,True,4.0,295.0
+1559361,Brentwood North,Brentwood (lease),Lease country,2025,B,observed,2025,170.83,170.83,0.0,0.0,2024,0.0,0.0,0.0,True,4.0,295.0
+1559361,Brentwood North,Brentwood (lease),Lease country,2026,B,observed,2026,170.83,170.83,0.0,0.0,2025,0.0,0.0,0.0,True,4.0,295.0
+1559360,Brentwood South,Brentwood (lease),Lease country,2022,A,not_managed,,,,,,,,,,,,
+1559360,Brentwood South,Brentwood (lease),Lease country,2023,A,not_managed,,,,,,,,,,,,
+1559360,Brentwood South,Brentwood (lease),Lease country,2024,A,observed,2024,478.56,478.56,0.0,0.0,,,,,True,5.0,668.0
+1559360,Brentwood South,Brentwood (lease),Lease country,2025,B,observed,2025,478.56,478.56,0.0,0.0,2024,0.0,0.0,0.0,True,5.0,668.0
+1559360,Brentwood South,Brentwood (lease),Lease country,2026,B,observed,2026,478.56,478.56,0.0,0.0,2025,0.0,0.0,0.0,True,5.0,668.0
+1169659,Rio Chanel,Rio (lease),Lease country,2022,A,observed,2022,70.06,70.18,-0.13,-0.18,,,,,True,2.0,71.0
+1169659,Rio Chanel,Rio (lease),Lease country,2023,A,observed,2023,70.06,70.18,-0.13,-0.18,2022,0.0,0.0,0.0,True,2.0,71.0
+1169659,Rio Chanel,Rio (lease),Lease country,2024,A,observed,2024,70.06,70.18,-0.13,-0.18,2023,0.0,0.0,0.0,True,2.0,71.0
+1169659,Rio Chanel,Rio (lease),Lease country,2025,B,observed,2025,70.06,70.18,-0.13,-0.18,2024,0.0,0.0,0.0,True,2.0,71.0
+1169659,Rio Chanel,Rio (lease),Lease country,2026,B,not_managed,,,,,,,,,,,,
+1169660,Rio North,Rio (lease),Lease country,2022,A,observed,2022,462.42,483.49,-21.07,-4.36,,,,,True,8.0,134.0
+1169660,Rio North,Rio (lease),Lease country,2023,A,observed,2023,462.42,483.49,-21.07,-4.36,2022,0.0,0.0,0.0,True,8.0,134.0
+1169660,Rio North,Rio (lease),Lease country,2024,A,observed,2024,462.42,483.49,-21.07,-4.36,2023,0.0,0.0,0.0,True,8.0,134.0
+1169660,Rio North,Rio (lease),Lease country,2025,B,observed,2025,462.42,483.49,-21.07,-4.36,2024,0.0,0.0,0.0,True,8.0,134.0
+1169660,Rio North,Rio (lease),Lease country,2026,B,not_managed,,,,,,,,,,,,
+1169641,Rio South,Rio (lease),Lease country,2022,A,observed,2022,376.5,284.38,92.12,32.39,,,,,True,11.0,118.0
+1169641,Rio South,Rio (lease),Lease country,2023,A,observed,2023,376.5,284.38,92.12,32.39,2022,0.0,0.0,0.0,True,11.0,118.0
+1169641,Rio South,Rio (lease),Lease country,2024,A,observed,2024,376.5,284.38,92.12,32.39,2023,0.0,0.0,0.0,True,11.0,118.0
+1169641,Rio South,Rio (lease),Lease country,2025,B,observed,2025,376.5,284.38,92.12,32.39,2024,0.0,0.0,0.0,True,11.0,118.0
+1169641,Rio South,Rio (lease),Lease country,2026,B,not_managed,,,,,,,,,,,,
+1616828,Woodlands,Woodlands (lease),Lease country,2022,A,not_managed,,,,,,,,,,,,
+1616828,Woodlands,Woodlands (lease),Lease country,2023,A,not_managed,,,,,,,,,,,,
+1616828,Woodlands,Woodlands (lease),Lease country,2024,A,not_managed,,,,,,,,,,,,
+1616828,Woodlands,Woodlands (lease),Lease country,2025,B,observed,2025,326.83,327.0,-0.17,-0.05,,,,,True,1.0,5.0
+1616828,Woodlands,Woodlands (lease),Lease country,2026,B,observed,2026,326.83,327.0,-0.17,-0.05,2025,0.0,0.0,0.0,True,1.0,5.0
+1153803,C1,Caroleese,Trungley Hall,2022,A,observed,2022,57.59,57.59,-0.0,-0.01,,,,,True,1.0,118.0
+1153803,C1,Caroleese,Trungley Hall,2023,A,observed,2023,57.59,57.59,-0.0,-0.01,2022,0.0,0.0,0.0,True,1.0,118.0
+1153803,C1,Caroleese,Trungley Hall,2024,A,observed,2024,57.59,57.59,-0.0,-0.01,2023,0.0,0.0,0.0,True,1.0,118.0
+1153803,C1,Caroleese,Trungley Hall,2025,B,observed,2025,57.59,57.59,-0.0,-0.01,2024,0.0,0.0,0.0,True,1.0,118.0
+1153803,C1,Caroleese,Trungley Hall,2026,B,observed,2026,57.59,57.59,-0.0,-0.01,2025,0.0,0.0,0.0,True,1.0,118.0
+1169569,C2,Caroleese,Trungley Hall,2022,A,observed,2022,88.21,88.43,-0.22,-0.24,,,,,True,1.0,43.0
+1169569,C2,Caroleese,Trungley Hall,2023,A,observed,2023,88.21,88.43,-0.22,-0.24,2022,0.0,0.0,0.0,True,1.0,43.0
+1169569,C2,Caroleese,Trungley Hall,2024,A,observed,2024,88.21,88.43,-0.22,-0.24,2023,0.0,0.0,0.0,True,1.0,43.0
+1169569,C2,Caroleese,Trungley Hall,2025,B,observed,2025,88.21,88.43,-0.22,-0.24,2024,0.0,0.0,0.0,True,1.0,43.0
+1169569,C2,Caroleese,Trungley Hall,2026,B,observed,2026,88.21,88.43,-0.22,-0.24,2025,0.0,0.0,0.0,True,1.0,43.0
+1153804,C3,Caroleese,Trungley Hall,2022,A,observed,2022,24.42,24.42,-0.0,-0.0,,,,,True,1.0,81.0
+1153804,C3,Caroleese,Trungley Hall,2023,A,observed,2023,24.42,24.42,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,81.0
+1153804,C3,Caroleese,Trungley Hall,2024,A,observed,2024,24.42,24.42,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,81.0
+1153804,C3,Caroleese,Trungley Hall,2025,B,observed,2025,24.42,24.42,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,81.0
+1153804,C3,Caroleese,Trungley Hall,2026,B,observed,2026,24.42,24.42,-0.0,-0.02,2025,0.0,0.0,0.0,True,1.0,81.0
+1169571,North Gully,Caroleese,Trungley Hall,2022,A,observed,2022,122.84,128.14,-5.3,-4.14,,,,,True,3.0,69.0
+1169571,North Gully,Caroleese,Trungley Hall,2023,A,observed,2023,122.84,128.14,-5.3,-4.14,2022,0.0,0.0,0.0,True,3.0,69.0
+1169571,North Gully,Caroleese,Trungley Hall,2024,A,observed,2024,122.84,128.14,-5.3,-4.14,2023,0.0,0.0,0.0,True,3.0,69.0
+1169571,North Gully,Caroleese,Trungley Hall,2025,B,observed,2025,122.84,128.14,-5.3,-4.14,2024,0.0,0.0,0.0,True,3.0,69.0
+1169571,North Gully,Caroleese,Trungley Hall,2026,B,observed,2026,122.84,128.14,-5.3,-4.14,2025,0.0,0.0,0.0,True,3.0,69.0
+1153805,South Gully,Caroleese,Trungley Hall,2022,A,observed,2022,58.5,58.5,-0.0,-0.0,,,,,True,1.0,150.0
+1153805,South Gully,Caroleese,Trungley Hall,2023,A,observed,2023,58.5,58.5,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,150.0
+1153805,South Gully,Caroleese,Trungley Hall,2024,A,observed,2024,58.5,58.5,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,150.0
+1153805,South Gully,Caroleese,Trungley Hall,2025,B,observed,2025,58.5,58.5,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,150.0
+1153805,South Gully,Caroleese,Trungley Hall,2026,B,observed,2026,58.5,58.5,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,150.0
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,71.45,71.45,-0.0,-0.0,,,,,True,2.0,112.0
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,71.45,71.45,-0.0,-0.0,2022,0.0,0.0,0.0,True,2.0,112.0
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,71.45,71.45,-0.0,-0.0,2023,0.0,0.0,0.0,True,2.0,112.0
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,71.45,71.45,-0.0,-0.0,2024,0.0,0.0,0.0,True,2.0,112.0
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,71.45,71.45,-0.0,-0.0,2025,0.0,0.0,0.0,True,2.0,112.0
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,49.5,49.5,-0.0,-0.0,,,,,True,1.0,99.0
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,49.5,49.5,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,99.0
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,49.5,49.5,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,99.0
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,49.5,49.5,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,99.0
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,49.5,49.5,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,99.0
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,49.15,49.15,-0.0,-0.0,,,,,True,1.0,152.0
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,49.15,49.15,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,152.0
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,49.15,49.15,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,152.0
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,49.15,49.15,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,152.0
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,49.15,49.15,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,152.0
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,59.23,59.23,-0.0,-0.0,,,,,True,1.0,197.0
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,59.23,59.23,-0.0,-0.0,2022,0.0,0.0,0.0,True,1.0,197.0
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,59.23,59.23,-0.0,-0.0,2023,0.0,0.0,0.0,True,1.0,197.0
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,59.23,59.23,-0.0,-0.0,2024,0.0,0.0,0.0,True,1.0,197.0
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,59.23,59.23,-0.0,-0.0,2025,0.0,0.0,0.0,True,1.0,197.0
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,65.38,65.38,0.0,0.0,,,,,True,1.0,40.0
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,65.38,65.38,0.0,0.0,2022,0.0,0.0,0.0,True,1.0,40.0
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,65.38,65.38,0.0,0.0,2023,0.0,0.0,0.0,True,1.0,40.0
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,65.38,65.38,0.0,0.0,2024,0.0,0.0,0.0,True,1.0,40.0
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,65.38,65.38,0.0,0.0,2025,0.0,0.0,0.0,True,1.0,40.0
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2022,A,observed,2022,54.76,54.76,-0.0,-0.01,,,,,True,1.0,138.0
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2023,A,observed,2023,54.76,54.76,-0.0,-0.01,2022,0.0,0.0,0.0,True,1.0,138.0
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2024,A,observed,2024,54.76,54.76,-0.0,-0.01,2023,0.0,0.0,0.0,True,1.0,138.0
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2025,B,observed,2025,54.76,54.76,-0.0,-0.01,2024,0.0,0.0,0.0,True,1.0,138.0
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,2026,B,observed,2026,54.76,54.76,-0.0,-0.01,2025,0.0,0.0,0.0,True,1.0,138.0

@@ -73,6 +73,11 @@ Open the subtree index that matches the request:
   predictions with the honest per-region quality caveat (unvalidated outside reference regions).
   Soil/weather/terrain routing then needs
   only the boundary's `country` property.
+- Use **Data Pipeline → Australian branch** for the ten AU stages (SILO weather, SLGA/ASF
+  soil, Sentinel-2 NDVI, posters and zone reports): run `src/scripts/au/run_au_pipeline.py`
+  from the runtime copy. Stage order, environment switches, season/zone constants and the
+  gotchas that cost time are in `data-pipeline/au/GUIDE.md`; local rules are in
+  `data-pipeline/au/AGENTS.md`.
 
 ## Runtime Notes
 

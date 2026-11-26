@@ -330,28 +330,54 @@ def _canonical_field_root(field_slug: str | None) -> Path | None:
     return field_dir(_DEFAULT_GROWER, _DEFAULT_FARM, field_slug)
 
 
-def _load_ndvi_cards(field_slug: str | None) -> dict[str, str]:
+_NDVI_CARD_DEFAULTS: list[tuple[str, str, str]] = [
+    ("corn", "Corn average NDVI", "ndvi_corn.png"),
+    ("corn_peak_95", "Corn 95th %ile peak NDVI", "ndvi_corn_peak_95.png"),
+    ("soybean", "Soybean average NDVI", "ndvi_soybean.png"),
+    ("soybean_peak_95", "Soybean 95th %ile peak NDVI", "ndvi_soybean_peak_95.png"),
+    (
+        "current_season_cumulative",
+        "Cumulative NDVI by crop and year",
+        "ndvi_current_season_cumulative.png",
+    ),
+]
+
+
+def _ndvi_card_entries(field_slug: str | None) -> list[dict[str, str]]:
+    """Return NDVI cards in display order using summary filenames and titles.
+
+    A field whose crop slots both fall back to the shared all-vegetation asset
+    dedupes to one entry instead of showing two identical images.
+    """
     field_root = _canonical_field_root(field_slug)
     if field_root is None:
-        return {
-            "corn": "",
-            "corn_peak_95": "",
-            "soybean": "",
-            "soybean_peak_95": "",
-            "current_season_cumulative": "",
-        }
+        return []
     feature_dir = field_root / "derived" / "features"
-    cards: dict[str, str] = {}
-    for key, filename in {
-        "corn": "ndvi_corn.png",
-        "corn_peak_95": "ndvi_corn_peak_95.png",
-        "soybean": "ndvi_soybean.png",
-        "soybean_peak_95": "ndvi_soybean_peak_95.png",
-        "current_season_cumulative": "ndvi_current_season_cumulative.png",
-    }.items():
+    summary_path = field_root / "derived" / "summaries" / "ndvi_card_summary.json"
+    cards: dict[str, dict] = {}
+    if summary_path.exists():
+        try:
+            payload = json.loads(summary_path.read_text(encoding="utf-8"))
+            cards = payload.get("cards", {})
+        except (OSError, json.JSONDecodeError):
+            cards = {}
+    entries: list[dict[str, str]] = []
+    seen_filenames: set[str] = set()
+    for key, default_label, default_filename in _NDVI_CARD_DEFAULTS:
+        entry = cards.get(key, {})
+        output_png = entry.get("output_png")
+        filename = Path(str(output_png)).name if output_png else default_filename
+        if filename in seen_filenames:
+            continue
+        seen_filenames.add(filename)
         path = feature_dir / filename
-        cards[key] = _img_to_b64(path) if path.exists() else ""
-    return cards
+        entries.append(
+            {
+                "title": str(entry.get("title") or default_label),
+                "payload": _img_to_b64(path) if path.exists() else "",
+            }
+        )
+    return entries
 
 
 def _cdl_csv_path() -> Path:
@@ -433,7 +459,7 @@ def _field_card(
     field_weather,
     poster_b64: str,
     soil_cards: list[tuple[str, str, str]],
-    ndvi_cards: dict,
+    ndvi_entries: list[dict[str, str]],
     strategy: dict[str, object],
     idx: int,
 ) -> str:
@@ -478,14 +504,9 @@ def _field_card(
         else "<p>No weather data</p>"
     )
     ndvi_blocks = []
-    for key, label in [
-        ("corn", "Corn average NDVI"),
-        ("corn_peak_95", "Corn 95th %ile peak NDVI"),
-        ("soybean", "Soybean average NDVI"),
-        ("soybean_peak_95", "Soybean 95th %ile peak NDVI"),
-        ("current_season_cumulative", "Cumulative NDVI by crop and year"),
-    ]:
-        payload = ndvi_cards.get(key, "")
+    for entry in ndvi_entries:
+        label = entry.get("title") or "NDVI"
+        payload = entry.get("payload", "")
         if payload:
             ndvi_blocks.append(
                 f'<div><h4>{label}</h4><img src="data:image/png;base64,{payload}" style="width:100%" alt="{label}"></div>'
@@ -649,14 +670,7 @@ def main() -> None:
         )
         if poster_path.exists():
             field_poster_input_paths.append(str(poster_path.relative_to(_REPO)))
-        for filename in (
-            "ndvi_corn.png",
-            "ndvi_corn_peak_95.png",
-            "ndvi_soybean.png",
-            "ndvi_soybean_peak_95.png",
-            "ndvi_current_season_cumulative.png",
-        ):
-            path = field_root / "derived" / "features" / filename
+        for path in sorted((field_root / "derived" / "features").glob("ndvi_*.png")):
             if path.exists():
                 ndvi_input_paths.append(str(path.relative_to(_REPO)))
         for _, _, relative_path in _soil_card_specs():
@@ -758,14 +772,21 @@ def main() -> None:
         fw["date"] = pd.to_datetime(fw["date"])
         df_row_matches = field_df[field_df["field_id"] == fid]
         df_row = df_row_matches.iloc[0] if not df_row_matches.empty else pd.Series(frow)
-        ndvi_cards = _load_ndvi_cards(field_slug_lookup.get(str(fid)))
+        ndvi_entries = _ndvi_card_entries(field_slug_lookup.get(str(fid)))
         strategy = generate_field_recommendations(
             df_row.to_dict() if hasattr(df_row, "to_dict") else dict(df_row),
             centroid_lat=_field_centroid_latitude(fields, idx_num),
         )
         field_cards.append(
             _field_card(
-                frow, df_row, fw, poster_b64, soil_cards, ndvi_cards, strategy, idx_num
+                frow,
+                df_row,
+                fw,
+                poster_b64,
+                soil_cards,
+                ndvi_entries,
+                strategy,
+                idx_num,
             )
         )
 

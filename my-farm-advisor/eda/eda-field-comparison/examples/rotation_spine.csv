@@ -1,0 +1,34 @@
+field_id,paddock_name,farm,region,2022,2023,2024,2025,2026
+1153756,T1,Tullokan / Dalkeith,Trungley Hall,Canola,Wheat,Wheat,Canola,Wheat
+1153760,T2,Tullokan / Dalkeith,Trungley Hall,Canola,Wheat,Wheat,Canola,Wheat
+1153761,T3,Tullokan / Dalkeith,Trungley Hall,Canola,Wheat,Wheat,Canola,Wheat
+1153762,T4,Tullokan / Dalkeith,Trungley Hall,Wheat,Canola,Wheat,Barley,Faba/Broad/Field Bean
+1153763,T5,Tullokan / Dalkeith,Trungley Hall,Wheat,Canola,Wheat,Barley,Faba/Broad/Field Bean
+1153767,D1,Tullokan / Dalkeith,Trungley Hall,Canola,Wheat,Wheat,Barley,Faba/Broad/Field Bean
+1153768,Big Lucerne,Kanoona,Harden,Wheat,Canola,Wheat,Canola,Wheat
+1153769,Big Rye,Kanoona,Harden,Wheat,Canola,Wheat,Canola,Wheat
+1153770,Black Flat,Kanoona,Harden,Canola,Wheat,Canola,Wheat,Canola
+1153771,Copperbella,Kanoona,Harden,Pasture,Canola,Wheat,Wheat,Canola
+1153772,First Manning,Kanoona,Harden,Canola,Wheat,Wheat,Canola,Wheat
+1153774,Hill 50,Kanoona,Harden,Wheat,Canola,Wheat,Canola,Wheat
+1153775,Hill Tank,Kanoona,Harden,Wheat,Canola,Wheat,Canola,Wheat
+1153777,Lane Lucerne,Kanoona,Harden,Canola,Wheat,Canola,Wheat,Canola
+1153778,Little Hill,Kanoona,Harden,Pasture,Canola,Wheat,Canola,Wheat
+1153779,Oat Paddock,Kanoona,Harden,Wheat,Canola,Wheat,Wheat,Canola
+1153780,Pump Lane,Kanoona,Harden,Pasture,Pasture,Pasture,Pasture,Pasture
+1153781,Sheepyard,Kanoona,Harden,Pasture,Canola,Wheat,Canola,Wheat
+1153782,Smiths,Kanoona,Harden,Canola,Wheat,Canola,Wheat,Canola
+1153803,C1,Caroleese,Trungley Hall,Wheat,Barley,Narrow Leaf Lupin,Canola,Wheat
+1153804,C3,Caroleese,Trungley Hall,Wheat,Barley,Narrow Leaf Lupin,Canola,Wheat
+1153805,South Gully,Caroleese,Trungley Hall,Narrow Leaf Lupin,Canola,Wheat,Canola,Wheat
+1169569,C2,Caroleese,Trungley Hall,Wheat,Barley,Narrow Leaf Lupin,Canola,Wheat
+1169571,North Gully,Caroleese,Trungley Hall,Narrow Leaf Lupin,Canola,Wheat,Canola,Wheat
+1169641,Rio South,Rio (lease),Lease country,Canola,Canola,Wheat,Wheat,
+1169659,Rio Chanel,Rio (lease),Lease country,Canola,Canola,Wheat,Wheat,
+1169660,Rio North,Rio (lease),Lease country,Narrow Leaf Lupin,Wheat,Barley,Wheat,
+1169689,Far Manning,Kanoona,Harden,Pasture,Canola,Wheat,Canola,Wheat
+1169697,Stewarts,Kanoona,Harden,Pasture,Pasture,Canola,Wheat,Canola
+1169698,Back of Stewarts,Kanoona,Harden,Pasture,Pasture,Canola,Wheat,Canola
+1559360,Brentwood South,Brentwood (lease),Lease country,,,Wheat,Wheat,Canola
+1559361,Brentwood North,Brentwood (lease),Lease country,,,Wheat,Wheat,Canola
+1616828,Woodlands,Woodlands (lease),Lease country,,,,Narrow Leaf Lupin,Canola

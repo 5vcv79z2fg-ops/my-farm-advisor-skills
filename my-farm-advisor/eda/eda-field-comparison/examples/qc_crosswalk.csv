@@ -1,0 +1,4 @@
+retired_id,retired_name,parent_id,parent_name,retired_ha_2024,parent_ha_2024,parent_ha_2025,merged_ha,overlap_pct_of_retired,retired_crop_2022,retired_crop_2023,retired_crop_2024,parent_crop_2022,parent_crop_2023,parent_crop_2024
+1153773,Hayshed,1153777,Lane Lucerne,5.81,26.19,32.01,32.0,97.48,Wheat (Vixen),Canola (44Y30RR),Wheat (Vixen),Canola (44Y30RR),Wheat (Illabo),Canola (44Y30RR)
+1169687,House,1153779,Oat Paddock,7.3,12.73,20.31,20.03,97.44,Pasture (Annual Pasture),Pasture (Annual Pasture),Canola (44Y30RR),Wheat (Vixen),Canola (44Y30RR),Wheat (Vixen)
+1169914,Copperbella Creek,1153771,Copperbella,15.79,13.59,30.34,29.38,97.4,Pasture (Morgan),Canola (44Y30RR),Wheat (Vixen),Wheat (Vixen),Wheat (Illabo),Canola (44Y30RR)

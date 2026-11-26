@@ -137,6 +137,29 @@ def soil_scale(code: str, values, domain: bool = False):
     return cm, Normalize(lo, max(hi, lo * 1.02)), ticks
 
 
+def readable_ticks(norm, ticks, count: int = 4) -> list[float]:
+    """Ticks that actually label a continuous colorbar.
+
+    ``soil_scale`` prefers the agronomic anchors, but a paddock's own P2-P98
+    window can exclude all but one of them (an AU clay field spanning 16-20 %
+    keeps only the 20 % tick), which leaves a smooth bar with a single number
+    and no way to read the other end. When fewer than three anchors survive,
+    fall back to evenly spaced round values across the painted window. The
+    colour mapping is untouched; only the labels change.
+    """
+    lo, hi = float(norm.vmin), float(norm.vmax)
+    kept = [float(t) for t in ticks if lo <= float(t) <= hi]
+    if len(kept) >= 3 or hi <= lo:
+        return kept
+    from matplotlib.ticker import MaxNLocator
+
+    fallback = [
+        float(v) for v in MaxNLocator(nbins=count).tick_values(lo, hi)
+        if lo <= float(v) <= hi
+    ]
+    return fallback if len(fallback) >= 2 else [lo, hi]
+
+
 def dem_scale(elev_values):
     """(cmap, norm, relief_m, label) for an elevation clip.
 
