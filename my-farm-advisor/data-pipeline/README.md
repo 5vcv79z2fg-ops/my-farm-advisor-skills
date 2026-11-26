@@ -310,6 +310,10 @@ SLGA/ASF soil property grids (five slabs to 100 cm), Copernicus GLO-30 terrain,
 Sentinel-2 L2A, SILO weather and the grower's own crop records — never
 WorldCereal, and never NASA POWER.
 
+Stage order, environment switches, season/zone constants, the reference run
+counts and the rerun traps are collected in [au/GUIDE.md](au/GUIDE.md); local
+operating rules are in [au/AGENTS.md](au/AGENTS.md).
+
 `au/run_au_pipeline.py` is the entrypoint. It runs the per-farm stages in input
 order, then the zone-level stages:
 
