@@ -92,9 +92,24 @@ CROP_GROUP: dict[str, str] = {
     "Barley": "Cereal",
     "Canola": "Oilseed",
     "Narrow Leaf Lupin": "Legume",
-    "Field Peas": "Legume",
     "Faba/Broad/Field Bean": "Legume",
     "Pasture": "Pasture",
+}
+
+# Grower-record corrections, confirmed 2026-11-26. The annual shapefiles carry
+# the crop and variety as first entered; where the grower has since corrected
+# the record, the panel applies it here rather than in the exported CSV, so a
+# rebuild reproduces it and no downstream table can disagree. Keys are narrow:
+# the variety correction names farm, year, crop and the recorded variety, so
+# the other 32 Vixen rows across the panel are untouched.
+CROP_LABEL_CORRECTIONS: dict[str, str] = {
+    # Field peas were a pasture phase in the grower's records, not a crop.
+    "Field Peas": "Pasture",
+}
+
+VARIETY_CORRECTIONS: dict[tuple[str, int, str, str], str] = {
+    # Kanoona's 2023 wheat was Illabo, not the Vixen on the shapefile.
+    ("Kanoona", 2023, "Wheat", "Vixen"): "Illabo",
 }
 
 # Paddock is permanent pasture for all five years, so it cannot rotate.
@@ -209,6 +224,9 @@ class FieldRecord:
     parts: int
     vertices: int
     valid: bool = field(default=True)
+    # "shapefile" unless the grower corrected the variety, in which case
+    # "grower_correction" marks the row so the audit trail survives export.
+    variety_source: str = "shapefile"
 
     @property
     def area_geom(self) -> float:
@@ -228,18 +246,28 @@ def load_year(year: int) -> dict[int, FieldRecord]:
         raw = make_valid(shape(shp.__geo_interface__))
         geom = transform(_TO_TARGET, raw)
         pid = int(row["paddock_id"])
+        farm = _clean(row["property_n"])
+        recorded_crop = _clean(row["crop_name"])
+        crop = CROP_LABEL_CORRECTIONS.get(recorded_crop, recorded_crop)
+        variety = _clean(row["variety_na"])
+        variety_source = "shapefile"
+        corrected_variety = VARIETY_CORRECTIONS.get((farm, year, crop, variety))
+        if corrected_variety is not None:
+            variety = corrected_variety
+            variety_source = "grower_correction"
         out[pid] = FieldRecord(
             paddock_id=pid,
             name=_clean(row["paddock_na"]),
-            farm=_clean(row["property_n"]),
-            crop=_clean(row["crop_name"]),
-            variety=_clean(row["variety_na"]),
+            farm=farm,
+            crop=crop,
+            variety=variety,
             area_reported=parse_area(row["area"]),
             year=year,
             geom=geom,
             parts=len(shp.parts),
             vertices=len(shp.points),
             valid=bool(geom.is_valid),
+            variety_source=variety_source,
         )
     return out
 

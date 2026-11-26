@@ -48,6 +48,7 @@ COLUMNS = [
     "area_ha_noncropped",
     "crop",
     "variety",
+    "variety_source",
     "crop_group",
     "crop_mix",
     "mixed_flag",
@@ -72,10 +73,12 @@ def resolve_year(
     comps = components_for(cid, layers[year])
     crop_ha: dict[str, float] = defaultdict(float)
     variety_by_crop: dict[str, list[str]] = defaultdict(list)
+    variety_source_by_crop: dict[str, list[str]] = defaultdict(list)
     for comp in comps:
         if not comp.crop:
             continue
         crop_ha[comp.crop] += comp.area_geom
+        variety_source_by_crop[comp.crop].append(comp.variety_source)
         if comp.variety and comp.variety not in variety_by_crop[comp.crop]:
             variety_by_crop[comp.crop].append(comp.variety)
 
@@ -98,6 +101,7 @@ def resolve_year(
             "status": "observed",
             "crop": confirmed["crop"],
             "variety": confirmed["variety"],
+            "variety_source": "grower_confirmed",
             "crop_mix": "",
             "mixed_flag": False,
             "crop_source": confirmed["crop_source"],
@@ -117,6 +121,11 @@ def resolve_year(
         "status": "observed",
         "crop": dominant,
         "variety": ", ".join(variety_by_crop[dominant]),
+        "variety_source": (
+            "grower_correction"
+            if "grower_correction" in variety_source_by_crop[dominant]
+            else "shapefile"
+        ),
         "crop_mix": (
             "; ".join(f"{short_crop(c)} {ha:.2f}" for c, ha in ranked)
             if mixed
@@ -165,6 +174,7 @@ def build() -> pd.DataFrame:
                         "area_ha_noncropped": None,
                         "crop": "",
                         "variety": "",
+                        "variety_source": "",
                         "crop_group": "",
                         "crop_mix": "",
                         "mixed_flag": False,
@@ -198,6 +208,7 @@ def build() -> pd.DataFrame:
                     ),
                     "crop": crop,
                     "variety": resolved["variety"],
+                    "variety_source": resolved["variety_source"],
                     "crop_group": CROP_GROUP.get(crop, "Other"),
                     "crop_mix": resolved["crop_mix"],
                     "mixed_flag": resolved["mixed_flag"],

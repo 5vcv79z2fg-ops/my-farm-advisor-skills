@@ -123,8 +123,8 @@ diverse break-crop system.
 {{crop_mix_zone}}
 
 The zones differ in more than scale. Harden carries every pasture
-paddock-year and the only field peas, and no barley or lupin at all. Trungley
-Hall is the most mixed: barley, lupin and faba beans all appear.
+paddock-year and no barley or lupin at all. Trungley Hall is the most mixed:
+barley, lupin and faba beans all appear.
 Lease country has no pasture and no faba beans. Shannon diversity over crops
 reflects that mix — Trungley Hall {{shannon_trungley}}, Harden
 {{shannon_harden}}, lease country {{shannon_lease}} — but the lease figure
@@ -230,9 +230,9 @@ seasons; canola peaks in July or August in {{canola_peak_jul_aug}} of
 
 {{ndvi_crop}}
 
-Read the ordering carefully. Pasture leads on the mean because its canopy is
-present across the whole window rather than senescing, and lupin trails. Field
-peas and faba beans rest on {{small_crop_n}} seasons each and should not be
+Read the ordering carefully. Pasture leads on the mean because most of its
+paddock-years carry a canopy across the whole window rather than senescing,
+and lupin trails. Faba beans rest on {{small_crop_n}} seasons and should not be
 ranked. The integral ranks the crops in the same order as the mean, so the
 ordering is not an artefact of how many months each season happened to observe.
 

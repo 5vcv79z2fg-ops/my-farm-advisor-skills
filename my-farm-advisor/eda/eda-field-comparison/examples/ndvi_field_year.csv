@@ -14,7 +14,7 @@ field_slug,paddock_name,farm,region,year,status,crop,crop_group,use_type,season_
 1153770,Black Flat,Kanoona,Harden,2024,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.3600,2.8804,8,0.6264,16
 1153770,Black Flat,Kanoona,Harden,2025,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.3968,3.1744,10,0.6384,16
 1153770,Black Flat,Kanoona,Harden,2026,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4383,3.5062,10,0.6167,16
-1153771,Copperbella,Kanoona,Harden,2022,observed,Field Peas,Legume,grain,04-01,11-30,8,8,,0.3419,2.7352,10,0.5869,16
+1153771,Copperbella,Kanoona,Harden,2022,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.3419,2.7352,10,0.5869,16
 1153771,Copperbella,Kanoona,Harden,2023,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4341,3.4729,9,0.5371,16
 1153771,Copperbella,Kanoona,Harden,2024,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.3276,2.6210,9,0.5412,16
 1153771,Copperbella,Kanoona,Harden,2025,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.4023,3.2181,10,0.6326,16
@@ -39,7 +39,7 @@ field_slug,paddock_name,farm,region,year,status,crop,crop_group,use_type,season_
 1153777,Lane Lucerne,Kanoona,Harden,2024,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.3841,3.0726,6,0.5779,16
 1153777,Lane Lucerne,Kanoona,Harden,2025,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.3780,3.0240,10,0.6430,16
 1153777,Lane Lucerne,Kanoona,Harden,2026,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4170,3.3361,7,0.6463,16
-1153778,Little Hill,Kanoona,Harden,2022,observed,Field Peas,Legume,grain,04-01,11-30,8,8,,0.4578,3.6623,5,0.6609,16
+1153778,Little Hill,Kanoona,Harden,2022,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.4578,3.6623,5,0.6609,16
 1153778,Little Hill,Kanoona,Harden,2023,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4594,3.6750,7,0.6670,16
 1153778,Little Hill,Kanoona,Harden,2024,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.2950,2.3600,9,0.6481,16
 1153778,Little Hill,Kanoona,Harden,2025,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4216,3.3726,8,0.6882,16
@@ -54,7 +54,7 @@ field_slug,paddock_name,farm,region,year,status,crop,crop_group,use_type,season_
 1153780,Pump Lane,Kanoona,Harden,2024,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.3215,2.5720,9,0.5704,16
 1153780,Pump Lane,Kanoona,Harden,2025,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.3861,3.0892,10,0.6169,16
 1153780,Pump Lane,Kanoona,Harden,2026,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.4866,3.8926,7,0.6603,16
-1153781,Sheepyard,Kanoona,Harden,2022,observed,Field Peas,Legume,grain,04-01,11-30,8,8,,0.4760,3.8084,7,0.6128,16
+1153781,Sheepyard,Kanoona,Harden,2022,observed,Pasture,Pasture,grain,04-01,11-30,8,8,,0.4760,3.8084,7,0.6128,16
 1153781,Sheepyard,Kanoona,Harden,2023,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.5014,4.0111,7,0.6748,16
 1153781,Sheepyard,Kanoona,Harden,2024,observed,Wheat,Cereal,grain,04-01,11-30,8,8,,0.3305,2.6442,9,0.6415,16
 1153781,Sheepyard,Kanoona,Harden,2025,observed,Canola,Oilseed,grain,04-01,11-30,8,8,,0.4094,3.2753,8,0.6829,16

@@ -25,7 +25,7 @@ printed. So the sentences and the tables cannot drift apart, and
   155 paddock-years with a crop, and canola is the break: canola to
   wheat is 36.1 % of all consecutive-year transitions.
 - **A west–east gradient that outlives any single season.** Harden averages
-  437 mm of growing-season rain and a median season NDVI of
+  443 mm of growing-season rain and a median season NDVI of
   0.417; lease country averages 326 mm and 0.266.
 - **2022 is the season that carries the most information.** It was the
   wettest (688 mm) and produced one of Harden's best canopies (median
@@ -131,7 +131,7 @@ a crop, two moves dominate:
 | Wheat to Wheat              |          11 |     9.0 |
 | Wheat to Barley             |           7 |     5.7 |
 | Narrow Leaf Lupin to Canola |           6 |     4.9 |
-| Pasture to Pasture          |           6 |     4.9 |
+| Pasture to Canola           |           6 |     4.9 |
 | All other transitions       |          16 |    13.1 |
 
 
@@ -141,7 +141,7 @@ are 15.6 % of transitions and wheat-after-wheat specifically
 9.0 %, so continuous wheat is the exception rather than the
 system. Over the whole panel wheat is 44.5 % of cropped paddock-years
 and canola 36.1 %; by crop group that is 49.0 % cereal,
-36.1 % oilseed, 8.4 % legume and 6.5 %
+36.1 % oilseed, 6.5 % legume and 8.4 %
 pasture. This is a two-crop rotation with a legume and pasture fringe, not a
 diverse break-crop system.
 
@@ -152,17 +152,16 @@ diverse break-crop system.
 | Canola                |   41.2 |          29.1 |          35.0 | 36.1 |
 | Barley                |    0.0 |          10.9 |           5.0 |  4.5 |
 | Narrow Leaf Lupin     |    0.0 |           9.1 |          10.0 |  4.5 |
-| Field Peas            |    3.8 |           0.0 |           0.0 |  1.9 |
 | Faba/Broad/Field Bean |    0.0 |           5.5 |           0.0 |  1.9 |
-| Pasture               |   12.5 |           0.0 |           0.0 |  6.5 |
+| Pasture               |   16.2 |           0.0 |           0.0 |  8.4 |
 
 
 The zones differ in more than scale. Harden carries every pasture
-paddock-year and the only field peas, and no barley or lupin at all. Trungley
-Hall is the most mixed: barley, lupin and faba beans all appear.
+paddock-year and no barley or lupin at all. Trungley Hall is the most mixed:
+barley, lupin and faba beans all appear.
 Lease country has no pasture and no faba beans. Shannon diversity over crops
 reflects that mix — Trungley Hall 1.34, Harden
-1.11, lease country 1.09 — but the lease figure
+1.02, lease country 1.09 — but the lease figure
 rests on 20 cropped paddock-years against
 80 at Harden, so it is the least reliable of the
 three.
@@ -173,8 +172,8 @@ three.
 | Wheat         | 33.3 | 30.0 | 68.8 | 36.4 | 53.3 |
 | Canola        | 33.3 | 50.0 | 15.6 | 48.5 | 33.3 |
 | Barley        |  0.0 | 10.0 |  3.1 |  9.1 |  0.0 |
-| Other legumes | 20.0 |  0.0 |  9.4 |  3.0 | 10.0 |
-| Pasture       | 13.3 | 10.0 |  3.1 |  3.0 |  3.3 |
+| Other legumes | 10.0 |  0.0 |  9.4 |  3.0 | 10.0 |
+| Pasture       | 23.3 | 10.0 |  3.1 |  3.0 |  3.3 |
 
 
 The year table shows the rotation pulsing rather than averaging out.
@@ -197,19 +196,19 @@ farm's own window.
 
 | Zone          | Season rain mm | Season range mm | GDD base 0 | Frost days | Sowing rain mm |
 | ------------- | -------------: | --------------: | ---------: | ---------: | -------------: |
-| Harden        |            437 |         320–750 |      2,884 |         67 |            112 |
+| Harden        |            443 |         320–750 |      2,911 |         67 |            112 |
 | Trungley Hall |            343 |         209–687 |      2,883 |         59 |             95 |
 | Lease country |            326 |         180–688 |      2,983 |         51 |             94 |
 
 
-Harden is the wetter, frostier end: 437 mm of season rain
-(320–750 mm across the five seasons), 2,884 degree-days
+Harden is the wetter, frostier end: 443 mm of season rain
+(320–750 mm across the five seasons), 2,911 degree-days
 base 0 °C and 67 frost days. Lease country is the drier, warmer
 end at 326 mm (180–688), 2,983 degree-days and
 51 frost days. Trungley Hall sits between on rain
 (343 mm, 209–687) and frost (59
 days) but has essentially the same heat sum as Harden (2,883 against
-2,884 degree-days) — a reminder that GDD is set by temperature and
+2,911 degree-days) — a reminder that GDD is set by temperature and
 season length, not by rainfall. Sowing rain
 follows the rain gradient: 112 mm at Harden, 95 mm
 at Trungley Hall, 94 mm on the lease blocks.
@@ -221,7 +220,7 @@ at Trungley Hall, 94 mm on the lease blocks.
 | 2023   |     226 |      2,885 |         73 |             61 |
 | 2024   |     278 |      2,906 |         66 |            110 |
 | 2025   |     244 |      2,942 |         62 |             54 |
-| 2026   |     316 |      3,082 |         43 |             73 |
+| 2026   |     321 |      3,104 |         43 |             73 |
 
 
 The seasons differ far more than the zones do. 2022 took
@@ -230,21 +229,21 @@ The seasons differ far more than the zones do. 2022 took
 single farm-season in the record (Kanoona, 2022,
 750 mm), while the driest is Brentwood (lease) in 2023 at
 180 mm. The heat sum moves the other way: 2026 is the warmest
-season at 3,082 degree-days, 8.1 % above 2022
+season at 3,104 degree-days, 8.9 % above 2022
 (2,850). Sowing rain separates the seasons even more sharply —
 190 mm in 2022 against 54 mm in 2025,
 a factor of 3.6. Mean frost days run from 36 in the wet
 2022 to 73 in 2023, and every season after
 2022 stayed below 320 mm — 278 mm in 2024,
-244 mm in 2025 and 316 mm in 2026.
+244 mm in 2025 and 321 mm in 2026.
 
 Rain and heat are not independent: the correlation between season rain and GDD
-base 0 is -0.35 across the 30 farm-seasons, so drier
+base 0 is -0.33 across the 30 farm-seasons, so drier
 seasons tend to run hotter. A claim of the form "heat drove this, not rain" is
 therefore not testable with five seasons, and this analysis does not make one.
 
 One record is still open. 2026 at Kanoona covers
-233 of 244 season days, because the daily record
+239 of 244 season days, because the daily record
 stops short of the season end, so its totals are lower than a completed year's
 and its lines stop rather than being projected. Every other farm-season is
 complete.
@@ -303,14 +302,13 @@ seasons; canola peaks in July or August in 42 of
 | Canola                |          56 |            0.402 |           3.132 |       0.604 |
 | Barley                |           7 |            0.302 |           2.416 |       0.542 |
 | Narrow Leaf Lupin     |           7 |            0.226 |           1.519 |       0.475 |
-| Field Peas            |           3 |            0.458 |           3.662 |       0.613 |
 | Faba/Broad/Field Bean |           3 |            0.374 |           2.993 |       0.638 |
-| Pasture               |          10 |            0.481 |           3.844 |       0.650 |
+| Pasture               |          13 |            0.475 |           3.800 |       0.647 |
 
 
-Read the ordering carefully. Pasture leads on the mean because its canopy is
-present across the whole window rather than senescing, and lupin trails. Field
-peas and faba beans rest on 3 seasons each and should not be
+Read the ordering carefully. Pasture leads on the mean because most of its
+paddock-years carry a canopy across the whole window rather than senescing,
+and lupin trails. Faba beans rest on 3 seasons and should not be
 ranked. The integral ranks the crops in the same order as the mean, so the
 ordering is not an artefact of how many months each season happened to observe.
 
@@ -400,7 +398,7 @@ system-wide rather than western — it is the season with the most wheat
 ### Rain and canopy
 
 Pooling all 155 seasons, the integral and season rain correlate at
--0.02 Pearson and 0.34 Spearman — flat
+0.00 Pearson and 0.34 Spearman — flat
 in levels, weakly monotone in ranks. Wheat alone (rho 0.30) and
 canola alone (rho 0.28) do not sharpen it.
 
@@ -409,7 +407,7 @@ canola alone (rho 0.28) do not sharpen it.
 | ------------------- | ----------: | -----------: | --------------: |
 | dry                 |          66 |          258 |           2.495 |
 | mid                 |          43 |          349 |           3.279 |
-| wet                 |          46 |          606 |           3.333 |
+| wet                 |          46 |          617 |           3.333 |
 
 
 The dry third sits clearly below the others
@@ -441,7 +439,7 @@ and it is the one used for the zone comparisons.
    63.4 % of the area and sixteen hold 13.0 %, so
    this document states which basis each statistic uses.
 3. **The zone gradient is the largest stable signal.** Harden
-   (0.417, 437 mm) leads Trungley Hall
+   (0.417, 443 mm) leads Trungley Hall
    (0.328, 343 mm) and lease country
    (0.266, 326 mm) on the season integral in all five
    seasons, and the Harden-to-lease gap of 1.275 NDVI-months

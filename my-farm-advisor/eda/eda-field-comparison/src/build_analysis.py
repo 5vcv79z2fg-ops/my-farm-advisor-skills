@@ -39,7 +39,6 @@ CROPS = (
     "Canola",
     "Barley",
     "Narrow Leaf Lupin",
-    "Field Peas",
     "Faba/Broad/Field Bean",
     "Pasture",
 )
@@ -360,7 +359,7 @@ def build_findings(data: dict[str, pd.DataFrame]) -> dict[str, str | Table]:
 
     by_year = pd.crosstab(observed["year"], observed["crop"], normalize="index")
     by_year = by_year * 100.0
-    legume = ["Narrow Leaf Lupin", "Field Peas", "Faba/Broad/Field Bean"]
+    legume = ["Narrow Leaf Lupin", "Faba/Broad/Field Bean"]
     year_mix_rows = []
     for label, crops in (("Wheat", ["Wheat"]), ("Canola", ["Canola"]),
                          ("Barley", ["Barley"]), ("Other legumes", legume),
@@ -529,7 +528,7 @@ def build_findings(data: dict[str, pd.DataFrame]) -> dict[str, str | Table]:
     f["trungley_2022_months_high"] = _num(
         int(trungley_2022_wheat["months_observed"].max()))
     small_crops = fobs[fobs["crop"].isin(
-        ["Field Peas", "Faba/Broad/Field Bean"])].groupby("crop").size()
+        ["Faba/Broad/Field Bean"])].groupby("crop").size()
     f["small_crop_n"] = _num(int(small_crops.min()))
 
     used = monthly[monthly["used_in_season"].astype(bool)].copy()

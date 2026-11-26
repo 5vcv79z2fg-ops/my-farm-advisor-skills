@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from common import CROP_GROUP, CROP_LABEL_CORRECTIONS
+
 HERE = Path(__file__).resolve().parent
 EXAMPLES = HERE.parent / "examples"
 GROWER = "au-grain-grower"
@@ -72,6 +74,12 @@ def main() -> int:
     field_year = field_year[FIELD_YEAR_COLUMNS].sort_values(
         ["region", "farm", "field_slug", "year"], kind="stable"
     )
+    # The NDVI stage labels rows from its own copy of the shapefile attributes.
+    # Apply the same grower corrections the panel uses, so the two committed
+    # tables cannot disagree about a crop class.
+    field_year["crop"] = field_year["crop"].replace(CROP_LABEL_CORRECTIONS)
+    corrected_group = field_year["crop"].map(CROP_GROUP)
+    field_year["crop_group"] = corrected_group.fillna(field_year["crop_group"])
     out = EXAMPLES / "ndvi_field_year.csv"
     field_year.to_csv(out, index=False, float_format="%.4f")
 

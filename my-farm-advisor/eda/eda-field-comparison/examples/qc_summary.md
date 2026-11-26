@@ -104,14 +104,30 @@ statistics, both shown wherever the distinction matters.
 
 ## Crop records
 
-- 7 crop classes: wheat, barley, canola, narrow leaf lupin, field peas,
-  faba/broad bean, pasture.
+- 6 crop classes: wheat, barley, canola, narrow leaf lupin, faba/broad bean,
+  pasture.
 - Crop and variety are present in every observed field-year.
 - Pump Lane is permanent pasture for all five years and is flagged
   `permanent_pasture`, so rotation-diversity metrics are reported both with
   and without it.
-- 18 distinct five-year sequences across 33 fields. Repeats are genuine
+- 16 distinct five-year sequences across 33 fields. Repeats are genuine
   whole-farm programming, confirmed by the grower.
+
+### Grower-record corrections, 2026-11-26
+
+Two corrections come from the grower's own records rather than the exported
+shapefiles. Both are applied in `src/common.py` as documented overrides, so a
+panel rebuild reproduces them and no exported table can drift.
+
+| Correction | Records | Applied as |
+|---|---|---|
+| Field peas were a pasture phase | 3 Kanoona field-years (2022): Copperbella, Little Hill, Sheepyard | `crop` reads `Pasture`; the one mixed-year `crop_mix` string is rewritten too |
+| 2023 wheat variety was Illabo | 4 Kanoona paddocks (2023): Black Flat, First Manning, Lane Lucerne, Smiths | `variety` reads `Illabo`; the other 32 `Vixen` rows are unchanged |
+
+The variety override is keyed by farm, year, crop and the recorded variety, so
+it cannot catch unrelated `Vixen` records. `variety_source` records where each
+row's variety came from: `shapefile` 149, `grower_correction` 4,
+`grower_confirmed` 2.
 
 ## Known limitations
 
@@ -121,8 +137,8 @@ statistics, both shown wherever the distinction matters.
   (244 days), the other five farms 1 April – 15 November (229 days).
   Cross-region comparisons use the common 1 April – 15 November window, which
   is complete for all 30 farm-years. Kanoona 2026 is the only incomplete
-  farm-season (233 of 244 days; data to 19 November), so its own-season 2026
-  totals are lower bounds.
+  farm-season (239 of 244 days; SILO data to 25 November), so its own-season
+  2026 totals are lower bounds.
 - No yield or management input data in this build.
 - Three management regions within one enterprise, not three independent
   growers.
